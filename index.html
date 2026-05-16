@@ -1060,7 +1060,7 @@ footer { background: var(--ink); border-top: 1px solid rgba(255,255,255,.06); }
           ताजा तरकारी —<br/>
           <span>आजको मूल्यमा Order गर्नुस्!</span>
         </h2>
-        <p class="flash-sub">मूल्य हरेक दिन Billing System बाट अपडेट हुन्छ। WhatsApp मा <strong style="color:var(--amber);">9709612863</strong> मा सम्पर्क गर्नुस् र घरमै पाउनुस्।</p>
+        <p class="flash-sub" id="flash-sub-text">मूल्य हरेक दिन Billing System बाट अपडेट हुन्छ। WhatsApp मा <strong style="color:var(--amber);">9709612863</strong> मा सम्पर्क गर्नुस् र घरमै पाउनुस्।</p>
       </div>
       <div class="flash-countdown" aria-label="Shop Closing Time">
         <div class="fc-unit">
@@ -1804,7 +1804,7 @@ function applyWebsiteContent(data) {
     }
   }
   if (content.flashSub) {
-    const el = document.querySelector('.flash-sub');
+    const el = document.getElementById('flash-sub-text');
     if (el) el.textContent = content.flashSub;
   }
 
