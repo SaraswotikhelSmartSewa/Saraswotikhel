@@ -3,9 +3,44 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>घरायेसी — आफ्नै मानिसको दोकान</title>
+<title>घरायेसी — ताजा तरकारी पसल</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet"/>
+
+<!-- Firebase — same config as billing system -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyAVrrijkVGLV97Wz7BN7zuTJFO_bA6Hlfc",
+    authDomain: "gharayesi-76c2f.firebaseapp.com",
+    databaseURL: "https://gharayesi-76c2f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "gharayesi-76c2f",
+    storageBucket: "gharayesi-76c2f.firebasestorage.app",
+    messagingSenderId: "345826695292",
+    appId: "1:345826695292:web:73f8c84144d2846fdc51f9"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  /* Listen to the website node that the billing system writes */
+  onValue(ref(db, 'gharayesi_website'), snap => {
+    const data = snap.val();
+    if (!data) return;
+    window._websiteData = data;
+    document.dispatchEvent(new CustomEvent('website-data-ready', { detail: data }));
+  });
+
+  /* Also listen to full store data for live product prices */
+  onValue(ref(db, 'gharayesi'), snap => {
+    const d = snap.val();
+    if (d) {
+      window._storeData = d;
+      document.dispatchEvent(new CustomEvent('store-data-ready', { detail: d }));
+    }
+  });
+</script>
+
 <style>
 /* ═══════════════════════════════════════════════════
    DESIGN TOKENS
@@ -44,7 +79,6 @@ body {
   background: var(--cream);
   color: var(--ink);
   overflow-x: hidden;
-  cursor: default;
 }
 
 /* ── GRAIN OVERLAY ── */
@@ -59,10 +93,8 @@ body::after {
 
 /* ── SCROLL PROGRESS ── */
 #scroll-progress {
-  position: fixed;
-  top: 0; left: 0;
-  height: 3px;
-  width: 0%;
+  position: fixed; top: 0; left: 0;
+  height: 3px; width: 0%;
   background: linear-gradient(90deg, var(--jade3), var(--gold2), var(--amber));
   z-index: 9998;
   transition: width 0.1s linear;
@@ -110,12 +142,10 @@ nav {
   transition: box-shadow .3s;
 }
 nav.scrolled { box-shadow: 0 8px 40px rgba(0,0,0,.35); }
-
 .nav-inner {
   max-width: 1280px; margin: 0 auto;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 5%;
-  height: 70px;
+  padding: 0 5%; height: 70px;
 }
 .nav-brand {
   display: flex; align-items: center; gap: 13px;
@@ -128,57 +158,40 @@ nav.scrolled { box-shadow: 0 8px 40px rgba(0,0,0,.35); }
   font-size: 1.3rem;
   box-shadow: 0 0 24px rgba(82,183,136,.35);
   transition: transform .2s, box-shadow .2s;
+  overflow: hidden; position: relative;
 }
+.nav-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; }
 .nav-brand:hover .nav-logo { transform: rotate(-5deg) scale(1.05); box-shadow: 0 0 40px rgba(82,183,136,.5); }
 .nav-name-wrap { display: flex; flex-direction: column; }
-.nav-name {
-  font-family: var(--font-dev);
-  font-size: 1.1rem;
-  color: var(--white);
-  line-height: 1.1;
-}
+.nav-name { font-family: var(--font-dev); font-size: 1.1rem; color: var(--white); line-height: 1.1; }
 .nav-tagline { font-size: .6rem; color: var(--leaf); opacity: .75; letter-spacing: .06em; }
 
-.nav-links {
-  display: flex; align-items: center; gap: 6px;
-  list-style: none;
-}
+.nav-links { display: flex; align-items: center; gap: 6px; list-style: none; }
 .nav-links a {
-  text-decoration: none;
-  font-size: .8rem; font-weight: 600; letter-spacing: .03em;
-  color: rgba(255,255,255,.5);
-  padding: 8px 14px;
-  border-radius: 10px;
+  text-decoration: none; font-size: .8rem; font-weight: 600; letter-spacing: .03em;
+  color: rgba(255,255,255,.5); padding: 8px 14px; border-radius: 10px;
   transition: color .2s, background .2s;
 }
 .nav-links a:hover { color: var(--white); background: rgba(255,255,255,.07); }
 .nav-links a.active { color: var(--leaf); }
 
-.nav-right {
-  display: flex; align-items: center; gap: 10px;
-}
+.nav-right { display: flex; align-items: center; gap: 10px; }
 .nav-search-btn {
   width: 40px; height: 40px; border-radius: 12px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.1);
-  color: rgba(255,255,255,.6);
-  font-size: 1rem;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.6); font-size: 1rem;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: background .2s, color .2s;
+  cursor: pointer; transition: background .2s, color .2s;
 }
 .nav-search-btn:hover { background: rgba(255,255,255,.12); color: var(--white); }
 .nav-cart-btn {
   display: flex; align-items: center; gap: 8px;
   background: linear-gradient(135deg, var(--jade), var(--jade2));
-  color: var(--white);
-  padding: 10px 18px; border-radius: 12px;
-  font-size: .82rem; font-weight: 800;
-  cursor: pointer; border: none;
+  color: var(--white); padding: 10px 18px; border-radius: 12px;
+  font-size: .82rem; font-weight: 800; cursor: pointer; border: none;
   box-shadow: 0 4px 18px rgba(45,106,79,.4);
   transition: transform .15s, box-shadow .15s;
-  text-decoration: none;
-  position: relative;
+  text-decoration: none; position: relative;
 }
 .nav-cart-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(45,106,79,.5); }
 .cart-count {
@@ -187,72 +200,46 @@ nav.scrolled { box-shadow: 0 8px 40px rgba(0,0,0,.35); }
   background: var(--amber); color: var(--ink);
   font-size: .62rem; font-weight: 900;
   display: flex; align-items: center; justify-content: center;
-  border: 2.5px solid var(--ink);
-  font-family: var(--mono);
+  border: 2.5px solid var(--ink); font-family: var(--mono);
 }
-.nav-open-app {
-  background: rgba(244,160,28,.12);
-  border: 1.5px solid rgba(244,160,28,.35);
-  color: var(--amber);
-  padding: 9px 16px; border-radius: 11px;
-  font-size: .78rem; font-weight: 800;
-  cursor: pointer; text-decoration: none;
+.nav-billing-btn {
+  background: rgba(244,160,28,.12); border: 1.5px solid rgba(244,160,28,.35);
+  color: var(--amber); padding: 9px 16px; border-radius: 11px;
+  font-size: .78rem; font-weight: 800; cursor: pointer; text-decoration: none;
   transition: background .2s, border-color .2s;
 }
-.nav-open-app:hover { background: rgba(244,160,28,.22); }
+.nav-billing-btn:hover { background: rgba(244,160,28,.22); }
 
 /* Mobile hamburger */
 .nav-ham {
-  display: none;
-  flex-direction: column; gap: 5px;
+  display: none; flex-direction: column; gap: 5px;
   width: 40px; height: 40px;
   background: none; border: none; cursor: pointer;
   align-items: center; justify-content: center;
 }
-.nav-ham span {
-  display: block; width: 22px; height: 2px;
-  background: rgba(255,255,255,.7); border-radius: 2px;
-  transition: all .25s;
-}
+.nav-ham span { display: block; width: 22px; height: 2px; background: rgba(255,255,255,.7); border-radius: 2px; transition: all .25s; }
 
-/* ═══════════════════════════════════════════════════
-   MOBILE NAV DRAWER
-═══════════════════════════════════════════════════ */
+/* ── MOBILE NAV DRAWER ── */
 .mobile-nav {
-  display: none;
-  position: fixed; inset: 0; z-index: 300;
-  background: rgba(0,0,0,.5);
-  backdrop-filter: blur(6px);
-  opacity: 0;
-  transition: opacity .3s;
-  pointer-events: none;
+  display: none; position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(6px);
+  opacity: 0; transition: opacity .3s; pointer-events: none;
 }
 .mobile-nav.open { opacity: 1; pointer-events: auto; }
 .mobile-nav-panel {
   position: absolute; top: 0; right: 0; bottom: 0;
-  width: 85%; max-width: 320px;
-  background: var(--ink2);
+  width: 85%; max-width: 320px; background: var(--ink2);
   border-left: 1px solid rgba(82,183,136,.15);
   transform: translateX(100%);
   transition: transform .35s cubic-bezier(.4,0,.2,1);
-  overflow-y: auto;
-  padding: 24px 0 40px;
+  overflow-y: auto; padding: 24px 0 40px;
 }
 .mobile-nav.open .mobile-nav-panel { transform: translateX(0); }
-.mobile-nav-close {
-  display: flex; justify-content: flex-end;
-  padding: 0 20px 20px;
-}
-.mobile-nav-close button {
-  background: rgba(255,255,255,.08); border: none;
-  color: var(--white); width: 38px; height: 38px;
-  border-radius: 10px; font-size: 1.1rem; cursor: pointer;
-}
+.mobile-nav-close { display: flex; justify-content: flex-end; padding: 0 20px 20px; }
+.mobile-nav-close button { background: rgba(255,255,255,.08); border: none; color: var(--white); width: 38px; height: 38px; border-radius: 10px; font-size: 1.1rem; cursor: pointer; }
 .mobile-nav-links a {
-  display: flex; align-items: center; gap: 12px;
-  padding: 16px 24px;
-  color: rgba(255,255,255,.7);
-  text-decoration: none;
+  display: flex; align-items: center; gap: 12px; padding: 16px 24px;
+  color: rgba(255,255,255,.7); text-decoration: none;
   font-size: .95rem; font-weight: 600;
   border-bottom: 1px solid rgba(255,255,255,.05);
   transition: color .2s, background .2s;
@@ -264,213 +251,125 @@ nav.scrolled { box-shadow: 0 8px 40px rgba(0,0,0,.35); }
    HERO
 ═══════════════════════════════════════════════════ */
 .hero {
-  min-height: 100vh;
-  background: var(--ink);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 0;
-  padding: 0;
-  position: relative;
-  overflow: hidden;
+  min-height: 100vh; background: var(--ink);
+  display: grid; grid-template-columns: 1fr 1fr;
+  align-items: center; position: relative; overflow: hidden;
 }
-
-/* Left column */
-.hero-content {
-  padding: 100px 6% 80px 8%;
-  position: relative; z-index: 2;
-}
+.hero-content { padding: 100px 6% 80px 8%; position: relative; z-index: 2; }
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(82,183,136,.1);
-  border: 1px solid rgba(82,183,136,.25);
-  border-radius: 999px;
-  padding: 7px 18px;
+  background: rgba(82,183,136,.1); border: 1px solid rgba(82,183,136,.25);
+  border-radius: 999px; padding: 7px 18px;
   font-size: .7rem; font-weight: 800; letter-spacing: .12em;
   text-transform: uppercase; color: var(--leaf);
-  margin-bottom: 30px;
-  animation: fadeUp .7s ease both;
+  margin-bottom: 30px; animation: fadeUp .7s ease both;
 }
-.hero-eyebrow-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--jade3);
-  animation: pulse 2s ease-in-out infinite;
-}
+.hero-eyebrow-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--jade3); animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.7)} }
 
 .hero h1 {
   font-family: var(--font-dev);
   font-size: clamp(2.6rem, 5.5vw, 5rem);
-  color: var(--white);
-  line-height: 1.08;
-  margin-bottom: 12px;
+  color: var(--white); line-height: 1.08; margin-bottom: 12px;
   animation: fadeUp .8s .1s ease both;
 }
 .hero h1 .gold-text {
   background: linear-gradient(135deg, var(--gold2), var(--amber), var(--saffron));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .hero h1 .outline-text {
-  -webkit-text-stroke: 1.5px rgba(255,255,255,.4);
-  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255,255,255,.4); -webkit-text-fill-color: transparent;
 }
-
 .hero-sub {
-  font-size: clamp(.88rem, 1.6vw, 1.05rem);
-  color: rgba(255,255,255,.48);
-  max-width: 460px;
-  line-height: 1.85;
-  margin-bottom: 40px;
+  font-size: clamp(.88rem, 1.6vw, 1.05rem); color: rgba(255,255,255,.48);
+  max-width: 460px; line-height: 1.85; margin-bottom: 40px;
   animation: fadeUp .8s .2s ease both;
 }
-
 .hero-badges {
-  display: flex; gap: 10px; flex-wrap: wrap;
-  margin-bottom: 40px;
+  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 40px;
   animation: fadeUp .8s .3s ease both;
 }
 .hero-badge-pill {
   display: flex; align-items: center; gap: 6px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 999px;
-  padding: 6px 14px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 999px; padding: 6px 14px;
   font-size: .72rem; font-weight: 700; color: rgba(255,255,255,.65);
 }
 .hero-badge-pill span { font-size: .9rem; }
-
-.hero-actions {
-  display: flex; gap: 12px; flex-wrap: wrap;
-  animation: fadeUp .8s .4s ease both;
-}
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; animation: fadeUp .8s .4s ease both; }
 .btn-primary {
   display: inline-flex; align-items: center; gap: 10px;
   background: linear-gradient(135deg, var(--jade), var(--jade2));
-  color: var(--white);
-  padding: 16px 34px; border-radius: 16px;
-  font-size: .95rem; font-weight: 800;
-  text-decoration: none; border: none; cursor: pointer;
+  color: var(--white); padding: 16px 34px; border-radius: 16px;
+  font-size: .95rem; font-weight: 800; text-decoration: none; border: none; cursor: pointer;
   box-shadow: 0 8px 32px rgba(45,106,79,.45);
-  transition: transform .15s, box-shadow .15s;
-  letter-spacing: .01em;
+  transition: transform .15s, box-shadow .15s; letter-spacing: .01em;
 }
 .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 44px rgba(45,106,79,.55); }
 .btn-secondary {
   display: inline-flex; align-items: center; gap: 10px;
-  background: transparent;
-  border: 1.5px solid rgba(255,255,255,.18);
-  color: var(--white);
-  padding: 16px 30px; border-radius: 16px;
-  font-size: .95rem; font-weight: 700;
-  text-decoration: none; cursor: pointer;
+  background: transparent; border: 1.5px solid rgba(255,255,255,.18);
+  color: var(--white); padding: 16px 30px; border-radius: 16px;
+  font-size: .95rem; font-weight: 700; text-decoration: none; cursor: pointer;
   transition: background .2s, border-color .2s;
 }
 .btn-secondary:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.32); }
 
-/* Hero right — shop visual */
+/* Hero right */
 .hero-visual {
   position: relative; height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
-.hero-shop-scene {
-  position: relative; width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-}
-/* Giant background text */
 .hero-bg-text {
-  position: absolute;
-  font-family: var(--font-dev);
-  font-size: 28vw;
-  color: rgba(255,255,255,.025);
-  font-weight: 900;
-  line-height: 1;
-  user-select: none;
-  pointer-events: none;
-  white-space: nowrap;
+  position: absolute; font-family: var(--font-dev); font-size: 28vw;
+  color: rgba(255,255,255,.025); font-weight: 900; line-height: 1;
+  user-select: none; pointer-events: none; white-space: nowrap;
 }
-/* Shop window card */
 .shop-window {
-  position: relative; z-index: 3;
-  width: 340px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 32px;
-  overflow: hidden;
+  position: relative; z-index: 3; width: 340px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 32px; overflow: hidden;
   box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 80px rgba(82,183,136,.08);
   animation: float 6s ease-in-out infinite;
 }
-@keyframes float {
-  0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-14px)}
-}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
 .shop-window-header {
   background: linear-gradient(135deg, var(--jade), var(--jade2));
-  padding: 20px 22px 16px;
-  position: relative; overflow: hidden;
+  padding: 20px 22px 16px; position: relative; overflow: hidden;
 }
 .shop-window-header::before {
-  content: '';
-  position: absolute; top: -30px; right: -30px;
-  width: 100px; height: 100px; border-radius: 50%;
-  background: rgba(255,255,255,.1);
+  content: ''; position: absolute; top: -30px; right: -30px;
+  width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,.1);
 }
-.shop-win-logo {
-  display: flex; align-items: center; gap: 12px;
-  margin-bottom: 14px;
-}
+.shop-win-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .shop-win-icon {
   width: 50px; height: 50px; border-radius: 16px;
   background: rgba(255,255,255,.15);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem;
-  border: 1px solid rgba(255,255,255,.25);
+  display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+  border: 1px solid rgba(255,255,255,.25); overflow: hidden;
 }
-.shop-win-name {
-  font-family: var(--font-dev); font-size: 1.4rem; color: var(--white);
-  line-height: 1.1;
-}
+.shop-win-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; }
+.shop-win-name { font-family: var(--font-dev); font-size: 1.4rem; color: var(--white); line-height: 1.1; }
 .shop-win-sub { font-size: .65rem; color: rgba(255,255,255,.7); letter-spacing: .06em; }
-.shop-win-stats {
-  display: flex; gap: 8px;
-}
-.shop-win-stat {
-  flex: 1;
-  background: rgba(255,255,255,.12);
-  border-radius: 10px;
-  padding: 8px 10px;
-  text-align: center;
-}
-.shop-win-stat-num {
-  font-family: var(--mono); font-size: .95rem; color: var(--white); font-weight: 800;
-}
+.shop-win-stats { display: flex; gap: 8px; }
+.shop-win-stat { flex: 1; background: rgba(255,255,255,.12); border-radius: 10px; padding: 8px 10px; text-align: center; }
+.shop-win-stat-num { font-family: var(--mono); font-size: .95rem; color: var(--white); font-weight: 800; }
 .shop-win-stat-label { font-size: .55rem; color: rgba(255,255,255,.6); margin-top: 1px; }
-
 .shop-window-body { padding: 16px; }
 .shop-prod-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .shop-prod-row {
   display: flex; align-items: center; gap: 12px;
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 14px;
-  padding: 10px 12px;
-  transition: background .2s;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px; padding: 10px 12px;
 }
 .shop-prod-emoji { font-size: 1.6rem; flex-shrink: 0; }
 .shop-prod-info { flex: 1; min-width: 0; }
 .shop-prod-name { font-size: .78rem; font-weight: 700; color: var(--white); }
 .shop-prod-meta { font-size: .62rem; color: rgba(255,255,255,.4); font-family: var(--mono); margin-top: 2px; }
-.shop-prod-price {
-  font-family: var(--mono); font-size: .88rem;
-  color: var(--jade3); font-weight: 800;
-  flex-shrink: 0;
-}
+.shop-prod-price { font-family: var(--mono); font-size: .88rem; color: var(--jade3); font-weight: 800; flex-shrink: 0; }
 .shop-win-total {
   background: linear-gradient(135deg, var(--gold), var(--amber));
-  border-radius: 14px;
-  padding: 12px 16px;
+  border-radius: 14px; padding: 12px 16px;
   display: flex; align-items: center; justify-content: space-between;
 }
 .shop-win-total-label { font-size: .75rem; font-weight: 800; color: rgba(255,255,255,.8); }
@@ -479,83 +378,38 @@ nav.scrolled { box-shadow: 0 8px 40px rgba(0,0,0,.35); }
 /* Floating decorators */
 .hero-float-el {
   position: absolute; z-index: 4;
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 16px;
-  padding: 10px 16px;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px; padding: 10px 16px;
   font-size: .72rem; font-weight: 700; color: rgba(255,255,255,.7);
   display: flex; align-items: center; gap: 8px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0,0,0,.3);
+  backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,0,0,.3);
   white-space: nowrap;
 }
 .hfe-1 { top: 22%; left: 2%; animation: floatEl 5s 1s ease-in-out infinite; }
 .hfe-2 { bottom: 28%; right: 4%; animation: floatEl 5s 2.5s ease-in-out infinite; }
 .hfe-3 { top: 65%; left: 0; animation: floatEl 5s 0.5s ease-in-out infinite; }
-@keyframes floatEl {
-  0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-10px)}
-}
-
-/* Ambient glows */
-.hero-glow-a {
-  position: absolute; top: -10%; left: 20%;
-  width: 600px; height: 600px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(82,183,136,.07) 0%, transparent 65%);
-  pointer-events: none;
-}
-.hero-glow-b {
-  position: absolute; bottom: -20%; right: 15%;
-  width: 500px; height: 500px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(201,150,26,.06) 0%, transparent 65%);
-  pointer-events: none;
-}
+@keyframes floatEl { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.hero-glow-a { position: absolute; top: -10%; left: 20%; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(circle, rgba(82,183,136,.07) 0%, transparent 65%); pointer-events: none; }
+.hero-glow-b { position: absolute; bottom: -20%; right: 15%; width: 500px; height: 500px; border-radius: 50%; background: radial-gradient(circle, rgba(201,150,26,.06) 0%, transparent 65%); pointer-events: none; }
 .hero-scroll-line {
-  position: absolute; bottom: 40px; left: 50%;
-  transform: translateX(-50%);
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   color: rgba(255,255,255,.2); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase;
-  z-index: 5;
-  animation: fadeUp 1s .8s ease both;
+  z-index: 5; animation: fadeUp 1s .8s ease both;
 }
-.scroll-bar {
-  width: 1px; height: 44px;
-  background: linear-gradient(to bottom, rgba(82,183,136,.5), transparent);
-  animation: scrollAnim 1.8s ease-in-out infinite;
-}
+.scroll-bar { width: 1px; height: 44px; background: linear-gradient(to bottom, rgba(82,183,136,.5), transparent); animation: scrollAnim 1.8s ease-in-out infinite; }
 @keyframes scrollAnim { 0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom} }
 
 /* ═══════════════════════════════════════════════════
    TRUST STRIP
 ═══════════════════════════════════════════════════ */
-.trust-strip {
-  background: var(--ink2);
-  border-top: 1px solid rgba(82,183,136,.1);
-  border-bottom: 1px solid rgba(82,183,136,.08);
-  padding: 18px 5%;
-  overflow: hidden;
-  position: relative;
-}
-.trust-marquee {
-  display: flex; gap: 60px;
-  animation: marquee 25s linear infinite;
-  width: max-content;
-}
+.trust-strip { background: var(--ink2); border-top: 1px solid rgba(82,183,136,.1); border-bottom: 1px solid rgba(82,183,136,.08); padding: 18px 5%; overflow: hidden; }
+.trust-marquee { display: flex; gap: 60px; animation: marquee 25s linear infinite; width: max-content; }
 .trust-marquee:hover { animation-play-state: paused; }
 @keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-.trust-item {
-  display: flex; align-items: center; gap: 10px;
-  font-size: .78rem; font-weight: 700;
-  color: rgba(255,255,255,.35);
-  letter-spacing: .04em;
-  white-space: nowrap;
-}
+.trust-item { display: flex; align-items: center; gap: 10px; font-size: .78rem; font-weight: 700; color: rgba(255,255,255,.35); letter-spacing: .04em; white-space: nowrap; }
 .trust-item .ti-icon { font-size: 1.1rem; }
-.trust-sep {
-  width: 4px; height: 4px; border-radius: 50%;
-  background: rgba(82,183,136,.3);
-  flex-shrink: 0;
-}
+.trust-sep { width: 4px; height: 4px; border-radius: 50%; background: rgba(82,183,136,.3); flex-shrink: 0; }
 
 /* ═══════════════════════════════════════════════════
    SECTION SHARED UTILITIES
@@ -563,977 +417,331 @@ nav.scrolled { box-shadow: 0 8px 40px rgba(0,0,0,.35); }
 .section-wrap { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
 .section-label {
   font-size: .68rem; font-weight: 800; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--jade);
-  margin-bottom: 14px;
+  text-transform: uppercase; color: var(--jade); margin-bottom: 14px;
   display: flex; align-items: center; gap: 8px;
 }
-.section-label::before {
-  content: '';
-  display: block; width: 24px; height: 2px;
-  background: var(--jade3);
-  border-radius: 2px;
-}
-.section-title {
-  font-family: var(--font-dev);
-  font-size: clamp(1.9rem, 3.5vw, 3.2rem);
-  color: var(--ink); line-height: 1.15; margin-bottom: 16px;
-}
+.section-label::before { content: ''; display: block; width: 24px; height: 2px; background: var(--jade3); border-radius: 2px; }
+.section-title { font-family: var(--font-dev); font-size: clamp(1.9rem, 3.5vw, 3.2rem); color: var(--ink); line-height: 1.15; margin-bottom: 16px; }
 .section-title em { font-style: normal; color: var(--jade); }
-.section-sub {
-  font-size: .95rem; color: var(--g4);
-  line-height: 1.85; max-width: 520px;
-}
-
-/* Reveal animations */
-.reveal {
-  opacity: 0; transform: translateY(28px);
-  transition: opacity .65s cubic-bezier(.2,.8,.2,1), transform .65s cubic-bezier(.2,.8,.2,1);
-}
+.section-sub { font-size: .95rem; color: var(--g4); line-height: 1.85; max-width: 520px; }
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .65s cubic-bezier(.2,.8,.2,1), transform .65s cubic-bezier(.2,.8,.2,1); }
 .reveal.visible { opacity: 1; transform: translateY(0); }
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ═══════════════════════════════════════════════════
-   FLASH SALE / PROMO BANNER
+   LIVE BANNER — Billing System Controlled
 ═══════════════════════════════════════════════════ */
 .flash-section {
   background: linear-gradient(135deg, var(--ink), var(--ink2));
-  padding: 60px 0;
-  overflow: hidden;
-  position: relative;
+  padding: 60px 0; overflow: hidden; position: relative;
 }
 .flash-section::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(
-    -55deg,
-    transparent,
-    transparent 20px,
-    rgba(82,183,136,.02) 20px,
-    rgba(82,183,136,.02) 40px
-  );
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(-55deg, transparent, transparent 20px, rgba(82,183,136,.02) 20px, rgba(82,183,136,.02) 40px);
 }
-.flash-inner {
-  max-width: 1280px; margin: 0 auto; padding: 0 5%;
-  display: grid; grid-template-columns: 1fr auto;
-  align-items: center; gap: 40px;
-}
-.flash-content {}
+.flash-inner { max-width: 1280px; margin: 0 auto; padding: 0 5%; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 40px; }
 .flash-badge {
   display: inline-flex; align-items: center; gap: 8px;
   background: linear-gradient(135deg, rgba(244,160,28,.15), rgba(232,124,43,.15));
-  border: 1px solid rgba(244,160,28,.3);
-  border-radius: 999px; padding: 6px 16px;
-  font-size: .7rem; font-weight: 800; letter-spacing: .1em;
-  color: var(--amber); text-transform: uppercase;
-  margin-bottom: 16px;
+  border: 1px solid rgba(244,160,28,.3); border-radius: 999px; padding: 6px 16px;
+  font-size: .7rem; font-weight: 800; letter-spacing: .1em; color: var(--amber); text-transform: uppercase; margin-bottom: 16px;
 }
-.flash-badge-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: var(--amber);
-  animation: pulse 1.5s ease-in-out infinite;
-}
-.flash-title {
-  font-family: var(--font-dev);
-  font-size: clamp(1.6rem, 3vw, 2.6rem);
-  color: var(--white); line-height: 1.1; margin-bottom: 12px;
-}
-.flash-title span {
-  background: linear-gradient(135deg, var(--gold2), var(--amber));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+.flash-badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); animation: pulse 1.5s ease-in-out infinite; }
+.flash-title { font-family: var(--font-dev); font-size: clamp(1.6rem, 3vw, 2.6rem); color: var(--white); line-height: 1.1; margin-bottom: 12px; }
+.flash-title span { background: linear-gradient(135deg, var(--gold2), var(--amber)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 .flash-sub { font-size: .9rem; color: rgba(255,255,255,.45); line-height: 1.7; }
-
-.flash-countdown {
-  display: flex; gap: 14px; flex-shrink: 0;
-}
-.fc-unit {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-}
-.fc-num {
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 14px;
-  width: 70px; height: 70px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 1.8rem; font-weight: 900;
-  color: var(--white);
-  box-shadow: 0 4px 20px rgba(0,0,0,.3);
-}
+.flash-countdown { display: flex; gap: 14px; flex-shrink: 0; }
+.fc-unit { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.fc-num { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 14px; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 1.8rem; font-weight: 900; color: var(--white); box-shadow: 0 4px 20px rgba(0,0,0,.3); }
 .fc-label { font-size: .58rem; font-weight: 800; letter-spacing: .1em; color: rgba(255,255,255,.35); text-transform: uppercase; }
-.fc-sep {
-  font-size: 1.6rem; color: rgba(255,255,255,.3); font-weight: 900;
-  align-self: center; padding-bottom: 20px;
-}
+.fc-sep { font-size: 1.6rem; color: rgba(255,255,255,.3); font-weight: 900; align-self: center; padding-bottom: 20px; }
 
 /* ═══════════════════════════════════════════════════
-   CATEGORY GRID
+   VEGGIE CATEGORY GRID — Live from Billing System
 ═══════════════════════════════════════════════════ */
-.categories-section {
-  padding: 90px 0;
-  background: var(--cream);
-}
-.cat-header {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  margin-bottom: 48px; flex-wrap: wrap; gap: 16px;
-}
-.cat-see-all {
-  display: flex; align-items: center; gap: 6px;
-  color: var(--jade); font-size: .82rem; font-weight: 800;
-  text-decoration: none; border-bottom: 1.5px solid rgba(45,106,79,.3);
-  padding-bottom: 2px;
-  transition: color .2s, border-color .2s;
-}
+.categories-section { padding: 90px 0; background: var(--cream); }
+.cat-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; flex-wrap: wrap; gap: 16px; }
+.cat-see-all { display: flex; align-items: center; gap: 6px; color: var(--jade); font-size: .82rem; font-weight: 800; text-decoration: none; border-bottom: 1.5px solid rgba(45,106,79,.3); padding-bottom: 2px; transition: color .2s, border-color .2s; }
 .cat-see-all:hover { color: var(--jade2); border-color: var(--jade2); }
-.cat-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
-}
-.cat-card {
-  background: var(--white);
-  border-radius: 22px;
-  overflow: hidden;
-  border: 1.5px solid var(--g2);
-  cursor: pointer;
+
+/* Veggie sub-categories */
+.veggie-cat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+.veggie-cat-card {
+  background: var(--white); border-radius: 22px; overflow: hidden;
+  border: 1.5px solid var(--g2); cursor: pointer;
   transition: transform .25s, box-shadow .25s, border-color .25s;
-  text-align: center;
-  position: relative;
+  text-align: center; position: relative;
 }
-.cat-card:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(45,106,79,.15); border-color: var(--jade3); }
-.cat-card-visual {
-  height: 110px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 3.2rem;
-  background: var(--g1);
-  position: relative; overflow: hidden;
-}
-.cat-card-visual::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,.04));
-}
-.cat-card-body { padding: 14px 12px 16px; }
-.cat-card-name { font-size: .82rem; font-weight: 800; color: var(--ink); margin-bottom: 3px; }
-.cat-card-count { font-size: .65rem; color: var(--g3); font-family: var(--mono); }
-.cat-card-badge {
-  position: absolute; top: 10px; right: 10px;
-  background: var(--red); color: var(--white);
-  font-size: .55rem; font-weight: 900; letter-spacing: .05em;
-  padding: 3px 7px; border-radius: 999px;
-}
+.veggie-cat-card:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(45,106,79,.15); border-color: var(--jade3); }
+.veggie-cat-visual { height: 110px; display: flex; align-items: center; justify-content: center; font-size: 3.2rem; background: var(--g1); position: relative; overflow: hidden; }
+.veggie-cat-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,.04)); }
+.veggie-cat-body { padding: 14px 12px 16px; }
+.veggie-cat-name { font-size: .82rem; font-weight: 800; color: var(--ink); margin-bottom: 3px; }
+.veggie-cat-count { font-size: .65rem; color: var(--g3); font-family: var(--mono); }
+.veggie-cat-badge { position: absolute; top: 10px; right: 10px; background: var(--red); color: var(--white); font-size: .55rem; font-weight: 900; letter-spacing: .05em; padding: 3px 7px; border-radius: 999px; }
 
 /* ═══════════════════════════════════════════════════
-   FEATURED PRODUCTS
+   LIVE PRODUCT GRID — Pulled from Billing System (Firebase)
 ═══════════════════════════════════════════════════ */
-.products-section {
-  padding: 80px 0 100px;
-  background: var(--parchment);
-}
-.products-header {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  margin-bottom: 16px; flex-wrap: wrap; gap: 16px;
-}
-.product-filter-tabs {
-  display: flex; gap: 6px; flex-wrap: wrap;
-  margin-bottom: 40px;
-}
-.pft {
-  padding: 8px 18px; border-radius: 999px;
-  font-size: .78rem; font-weight: 700;
+.products-section { padding: 80px 0 100px; background: var(--parchment); }
+.products-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 16px; }
+.product-filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 40px; }
+.pft { padding: 8px 18px; border-radius: 999px; font-size: .78rem; font-weight: 700; border: 1.5px solid var(--g2); color: var(--g4); background: var(--white); cursor: pointer; transition: all .2s; }
+.pft:hover, .pft.active { background: var(--jade); color: var(--white); border-color: var(--jade); box-shadow: 0 4px 16px rgba(45,106,79,.25); }
+
+.prod-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+
+/* Skeleton loader */
+.prod-skeleton {
+  background: var(--white); border-radius: 24px; overflow: hidden;
   border: 1.5px solid var(--g2);
-  color: var(--g4); background: var(--white);
-  cursor: pointer; transition: all .2s;
 }
-.pft:hover, .pft.active {
-  background: var(--jade); color: var(--white);
-  border-color: var(--jade);
-  box-shadow: 0 4px 16px rgba(45,106,79,.25);
-}
-.prod-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
+.skel-img { height: 180px; background: linear-gradient(90deg, var(--g1) 25%, var(--g2) 50%, var(--g1) 75%); background-size: 200% 100%; animation: skelShimmer 1.5s infinite; }
+.skel-body { padding: 16px; }
+.skel-line { height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--g1) 25%, var(--g2) 50%, var(--g1) 75%); background-size: 200% 100%; animation: skelShimmer 1.5s infinite; margin-bottom: 10px; }
+.skel-line.short { width: 60%; }
+@keyframes skelShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
 .prod-card {
-  background: var(--white);
-  border-radius: 24px;
-  overflow: hidden;
-  border: 1.5px solid var(--g2);
-  cursor: pointer;
-  transition: transform .25s, box-shadow .25s;
-  position: relative;
+  background: var(--white); border-radius: 24px; overflow: hidden;
+  border: 1.5px solid var(--g2); cursor: pointer;
+  transition: transform .25s, box-shadow .25s; position: relative;
 }
 .prod-card:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,.12); }
 .prod-card-img {
-  height: 180px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 4rem;
-  background: var(--g1);
-  position: relative; overflow: hidden;
+  height: 180px; display: flex; align-items: center; justify-content: center;
+  font-size: 4rem; background: var(--g1); position: relative; overflow: hidden;
 }
-.prod-card-img::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,.05));
-}
-.prod-discount-badge {
-  position: absolute; top: 12px; left: 12px;
-  background: linear-gradient(135deg, var(--red), #c0392b);
-  color: var(--white);
-  font-size: .6rem; font-weight: 900;
-  padding: 4px 10px; border-radius: 999px;
-  letter-spacing: .04em;
-  z-index: 2;
-}
-.prod-new-badge {
-  position: absolute; top: 12px; right: 12px;
-  background: linear-gradient(135deg, var(--jade), var(--jade3));
-  color: var(--white);
-  font-size: .6rem; font-weight: 900;
-  padding: 4px 10px; border-radius: 999px;
-  letter-spacing: .04em;
-  z-index: 2;
-}
-.prod-wishlist {
-  position: absolute; top: 10px; right: 10px;
-  width: 34px; height: 34px; border-radius: 50%;
-  background: rgba(255,255,255,.9);
-  border: none; cursor: pointer; font-size: .95rem;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 12px rgba(0,0,0,.12);
-  transition: transform .2s, background .2s;
-  z-index: 3;
-}
+.prod-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+.prod-card:hover .prod-card-img img { transform: scale(1.06); }
+.prod-card-img::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,.05)); }
+.prod-card-emoji-fallback { font-size: 4rem; }
+.prod-discount-badge { position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg, var(--red), #c0392b); color: var(--white); font-size: .6rem; font-weight: 900; padding: 4px 10px; border-radius: 999px; letter-spacing: .04em; z-index: 2; }
+.prod-fresh-badge { position: absolute; top: 12px; right: 12px; background: linear-gradient(135deg, var(--jade), var(--jade3)); color: var(--white); font-size: .6rem; font-weight: 900; padding: 4px 10px; border-radius: 999px; letter-spacing: .04em; z-index: 2; }
+.prod-wishlist { position: absolute; top: 10px; right: 10px; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.9); border: none; cursor: pointer; font-size: .95rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(0,0,0,.12); transition: transform .2s, background .2s; z-index: 3; }
 .prod-wishlist:hover { transform: scale(1.15); background: var(--white); }
 .prod-wishlist.liked { color: var(--red); }
-
 .prod-card-body { padding: 16px; }
 .prod-category { font-size: .6rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--jade); margin-bottom: 5px; }
 .prod-name { font-size: .88rem; font-weight: 800; color: var(--ink); margin-bottom: 4px; line-height: 1.3; }
 .prod-desc { font-size: .72rem; color: var(--g4); line-height: 1.5; margin-bottom: 12px; }
 .prod-price-row { display: flex; align-items: center; justify-content: space-between; }
-.prod-price {
-  display: flex; align-items: baseline; gap: 6px;
-}
+.prod-price { display: flex; align-items: baseline; gap: 6px; }
 .prod-price-curr { font-family: var(--mono); font-size: 1.1rem; font-weight: 900; color: var(--ink); }
 .prod-price-old { font-family: var(--mono); font-size: .75rem; color: var(--g3); text-decoration: line-through; }
 .prod-unit { font-size: .62rem; color: var(--g4); font-family: var(--mono); }
-.prod-add-btn {
-  width: 38px; height: 38px; border-radius: 12px;
-  background: linear-gradient(135deg, var(--jade), var(--jade2));
-  color: var(--white); border: none; cursor: pointer;
-  font-size: 1.1rem;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 14px rgba(45,106,79,.35);
-  transition: transform .15s, box-shadow .15s;
-}
+.prod-add-btn { width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, var(--jade), var(--jade2)); color: var(--white); border: none; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(45,106,79,.35); transition: transform .15s, box-shadow .15s; }
 .prod-add-btn:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(45,106,79,.45); }
 .prod-add-btn:active { transform: scale(.95); }
-
-.prod-rating {
-  display: flex; align-items: center; gap: 4px;
-  margin-bottom: 10px;
-}
+.prod-rating { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; }
 .prod-stars { font-size: .7rem; color: var(--amber); letter-spacing: .02em; }
 .prod-rating-count { font-size: .62rem; color: var(--g3); font-family: var(--mono); }
 
-/* Featured wide card */
-.prod-card.featured {
-  grid-column: span 2;
-  display: flex;
+/* Live sync badge */
+.live-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(82,183,136,.12); border: 1px solid rgba(82,183,136,.25);
+  border-radius: 999px; padding: 5px 12px;
+  font-size: .65rem; font-weight: 800; color: var(--jade3); letter-spacing: .06em;
 }
-.prod-card.featured .prod-card-img {
-  width: 50%; height: auto; min-height: 240px;
-  font-size: 6rem;
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--jade3); animation: pulse 1.8s ease-in-out infinite; }
+
+/* No products state */
+.no-products {
+  grid-column: 1 / -1; text-align: center; padding: 60px 20px;
+  color: var(--g4); font-size: .95rem; line-height: 1.8;
 }
-.prod-card.featured .prod-card-body {
-  flex: 1; padding: 24px;
-  display: flex; flex-direction: column; justify-content: center;
-}
-.prod-card.featured .prod-name { font-size: 1.1rem; margin-bottom: 8px; }
-.prod-card.featured .prod-desc { font-size: .82rem; margin-bottom: 16px; }
+.no-products-icon { font-size: 3rem; margin-bottom: 12px; opacity: .4; }
 
 /* ═══════════════════════════════════════════════════
-   HOW IT WORKS / OFFLINE+ONLINE
+   HOW IT WORKS
 ═══════════════════════════════════════════════════ */
-.how-section {
-  padding: 100px 0;
-  background: var(--white);
-  position: relative; overflow: hidden;
-}
-.how-section::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background:
-    radial-gradient(circle at 10% 50%, rgba(82,183,136,.04) 0%, transparent 40%),
-    radial-gradient(circle at 90% 50%, rgba(201,150,26,.03) 0%, transparent 40%);
-  pointer-events: none;
-}
-.how-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 80px; align-items: center;
-}
+.how-section { padding: 100px 0; background: var(--white); position: relative; overflow: hidden; }
+.how-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 10% 50%, rgba(82,183,136,.04) 0%, transparent 40%), radial-gradient(circle at 90% 50%, rgba(201,150,26,.03) 0%, transparent 40%); pointer-events: none; }
+.how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
 .how-steps { display: flex; flex-direction: column; gap: 0; }
-.how-step {
-  display: flex; gap: 20px;
-  padding: 28px 0;
-  border-bottom: 1px solid var(--g2);
-  position: relative;
-  transition: all .3s;
-  cursor: default;
-}
+.how-step { display: flex; gap: 20px; padding: 28px 0; border-bottom: 1px solid var(--g2); position: relative; transition: all .3s; cursor: default; }
 .how-step:last-child { border-bottom: none; }
 .how-step:hover .how-step-num { background: var(--jade); color: var(--white); transform: scale(1.08); }
-.how-step-num {
-  width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
-  background: var(--g1);
-  border: 1.5px solid var(--g2);
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: .85rem; font-weight: 900; color: var(--jade);
-  transition: all .25s;
-}
-.how-step-body { flex: 1; }
+.how-step-num { width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0; background: var(--g1); border: 1.5px solid var(--g2); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: .85rem; font-weight: 900; color: var(--jade); transition: all .25s; }
 .how-step-title { font-size: .95rem; font-weight: 800; color: var(--ink); margin-bottom: 6px; }
 .how-step-desc { font-size: .82rem; color: var(--g4); line-height: 1.7; }
-
-.how-visual {
-  position: relative;
-}
-.how-device {
-  background: var(--ink);
-  border-radius: 36px;
-  overflow: hidden;
-  border: 8px solid rgba(255,255,255,.08);
-  box-shadow: 0 40px 100px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.06);
-  position: relative; z-index: 2;
-}
-.how-device-bar {
-  background: rgba(255,255,255,.05);
-  padding: 14px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid rgba(255,255,255,.06);
-}
+.how-visual { position: relative; }
+.how-device { background: var(--ink); border-radius: 36px; overflow: hidden; border: 8px solid rgba(255,255,255,.08); box-shadow: 0 40px 100px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.06); position: relative; z-index: 2; }
+.how-device-bar { background: rgba(255,255,255,.05); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.06); }
 .hdb-dots { display: flex; gap: 6px; }
-.hdb-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: rgba(255,255,255,.12);
-}
-.hdb-dot:nth-child(1) { background: #ff5f57; }
-.hdb-dot:nth-child(2) { background: #ffbd2e; }
-.hdb-dot:nth-child(3) { background: #28c840; }
-.hdb-title {
-  font-family: var(--mono); font-size: .68rem; color: rgba(255,255,255,.3);
-  letter-spacing: .06em;
-}
+.hdb-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.12); }
+.hdb-dot:nth-child(1){background:#ff5f57} .hdb-dot:nth-child(2){background:#ffbd2e} .hdb-dot:nth-child(3){background:#28c840}
+.hdb-title { font-family: var(--mono); font-size: .68rem; color: rgba(255,255,255,.3); letter-spacing: .06em; }
 .how-device-body { padding: 18px; }
-.hd-metric-row {
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px; margin-bottom: 16px;
-}
-.hd-metric {
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 12px; padding: 12px 10px; text-align: center;
-}
-.hd-metric-val {
-  font-family: var(--mono); font-size: 1rem; font-weight: 900; color: var(--jade3);
-  margin-bottom: 2px;
-}
+.hd-metric-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.hd-metric { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px 10px; text-align: center; }
+.hd-metric-val { font-family: var(--mono); font-size: 1rem; font-weight: 900; color: var(--jade3); margin-bottom: 2px; }
 .hd-metric-key { font-size: .55rem; color: rgba(255,255,255,.35); letter-spacing: .06em; }
-.hd-bill-preview {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 14px; padding: 14px;
-}
-.hd-bill-row {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px dashed rgba(255,255,255,.07);
-}
+.hd-bill-preview { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 14px; }
+.hd-bill-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,.07); }
 .hd-bill-row:last-child { border: none; }
 .hd-bill-item { font-size: .72rem; color: rgba(255,255,255,.55); }
 .hd-bill-val { font-family: var(--mono); font-size: .72rem; color: var(--jade3); font-weight: 700; }
-.hd-bill-total-row {
-  display: flex; justify-content: space-between;
-  padding: 12px 0 0;
-  margin-top: 4px;
-}
+.hd-bill-total-row { display: flex; justify-content: space-between; padding: 12px 0 0; margin-top: 4px; }
 .hd-bill-total-label { font-size: .8rem; font-weight: 800; color: var(--white); }
 .hd-bill-total-val { font-family: var(--mono); font-size: 1.1rem; font-weight: 900; color: var(--amber); }
-
-/* Decorative floating tag */
-.how-badge-float {
-  position: absolute;
-  top: -20px; right: -20px;
-  background: linear-gradient(135deg, var(--jade), var(--jade3));
-  color: var(--white);
-  border-radius: 18px; padding: 14px 20px;
-  font-size: .75rem; font-weight: 800;
-  box-shadow: 0 16px 40px rgba(45,106,79,.4);
-  z-index: 5;
-  animation: float 4s ease-in-out infinite;
-  line-height: 1.5;
-}
+.how-badge-float { position: absolute; top: -20px; right: -20px; background: linear-gradient(135deg, var(--jade), var(--jade3)); color: var(--white); border-radius: 18px; padding: 14px 20px; font-size: .75rem; font-weight: 800; box-shadow: 0 16px 40px rgba(45,106,79,.4); z-index: 5; animation: float 4s ease-in-out infinite; line-height: 1.5; }
 
 /* ═══════════════════════════════════════════════════
-   SHOP IN PERSON (OFFLINE SHOWCASE)
+   BILLING SYSTEM SHOWCASE
 ═══════════════════════════════════════════════════ */
-.inperson-section {
-  padding: 100px 0;
-  background: var(--ink);
-  position: relative; overflow: hidden;
-}
-.inperson-bg-pattern {
-  position: absolute; inset: 0;
-  background-image:
-    radial-gradient(circle at 25% 25%, rgba(82,183,136,.05) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(201,150,26,.04) 0%, transparent 50%);
-  pointer-events: none;
-}
-.inperson-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 80px; align-items: center;
-}
-.inperson-section .section-title { color: var(--white); }
-.inperson-section .section-sub { color: rgba(255,255,255,.45); }
-.inperson-features {
-  display: flex; flex-direction: column; gap: 16px;
-  margin-top: 40px;
-}
-.inperson-feat {
-  display: flex; align-items: flex-start; gap: 16px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 18px; padding: 18px 20px;
-  transition: background .2s, border-color .2s;
-}
-.inperson-feat:hover { background: rgba(82,183,136,.07); border-color: rgba(82,183,136,.2); }
-.inperson-feat-icon {
-  width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
-  background: rgba(82,183,136,.12);
-  border: 1px solid rgba(82,183,136,.2);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem;
-}
-.inperson-feat-title { font-size: .88rem; font-weight: 800; color: var(--white); margin-bottom: 4px; }
-.inperson-feat-desc { font-size: .78rem; color: rgba(255,255,255,.4); line-height: 1.6; }
-
-.inperson-visual {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-.ip-card {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 22px; padding: 22px 18px;
-  transition: transform .25s, background .2s;
-}
-.ip-card:hover { transform: translateY(-4px); background: rgba(255,255,255,.06); }
-.ip-card.tall { grid-row: span 2; }
-.ip-card-icon { font-size: 2rem; margin-bottom: 12px; }
-.ip-card-title { font-size: .88rem; font-weight: 800; color: var(--white); margin-bottom: 6px; }
-.ip-card-desc { font-size: .72rem; color: rgba(255,255,255,.4); line-height: 1.6; }
-.ip-card-num {
-  font-family: var(--mono); font-size: 2rem; font-weight: 900;
-  color: var(--jade3); margin-top: 12px;
-}
-.ip-card-numsub { font-size: .65rem; color: rgba(255,255,255,.3); margin-top: 2px; }
+.billing-section { padding: 100px 0; background: var(--ink); position: relative; overflow: hidden; }
+.billing-bg-pattern { position: absolute; inset: 0; background-image: radial-gradient(circle at 25% 25%, rgba(82,183,136,.05) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(201,150,26,.04) 0%, transparent 50%); pointer-events: none; }
+.billing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.billing-section .section-title { color: var(--white); }
+.billing-section .section-sub { color: rgba(255,255,255,.45); }
+.billing-features { display: flex; flex-direction: column; gap: 16px; margin-top: 40px; }
+.billing-feat { display: flex; align-items: flex-start; gap: 16px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 18px; padding: 18px 20px; transition: background .2s, border-color .2s; }
+.billing-feat:hover { background: rgba(82,183,136,.07); border-color: rgba(82,183,136,.2); }
+.billing-feat-icon { width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0; background: rgba(82,183,136,.12); border: 1px solid rgba(82,183,136,.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+.billing-feat-title { font-size: .88rem; font-weight: 800; color: var(--white); margin-bottom: 4px; }
+.billing-feat-desc { font-size: .78rem; color: rgba(255,255,255,.4); line-height: 1.6; }
+.billing-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.bp-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 22px; padding: 22px 18px; transition: transform .25s, background .2s; }
+.bp-card:hover { transform: translateY(-4px); background: rgba(255,255,255,.06); }
+.bp-card.tall { grid-row: span 2; }
+.bp-card-icon { font-size: 2rem; margin-bottom: 12px; }
+.bp-card-title { font-size: .88rem; font-weight: 800; color: var(--white); margin-bottom: 6px; }
+.bp-card-desc { font-size: .72rem; color: rgba(255,255,255,.4); line-height: 1.6; }
+.bp-card-num { font-family: var(--mono); font-size: 2rem; font-weight: 900; color: var(--jade3); margin-top: 12px; }
+.bp-card-numsub { font-size: .65rem; color: rgba(255,255,255,.3); margin-top: 2px; }
 
 /* ═══════════════════════════════════════════════════
    TESTIMONIALS
 ═══════════════════════════════════════════════════ */
-.testimonials {
-  padding: 100px 0;
-  background: var(--cream);
-}
-.testi-header {
-  text-align: center; margin-bottom: 60px;
-}
+.testimonials { padding: 100px 0; background: var(--cream); }
+.testi-header { text-align: center; margin-bottom: 60px; }
 .testi-header .section-label { justify-content: center; }
 .testi-header .section-label::before { display: none; }
-.testi-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-}
-.testi-card {
-  background: var(--white);
-  border-radius: 24px; padding: 28px 26px;
-  border: 1.5px solid var(--g2);
-  transition: transform .25s, box-shadow .25s;
-  position: relative;
-}
+.testi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.testi-card { background: var(--white); border-radius: 24px; padding: 28px 26px; border: 1.5px solid var(--g2); transition: transform .25s, box-shadow .25s; position: relative; }
 .testi-card:hover { transform: translateY(-6px); box-shadow: 0 20px 60px rgba(45,106,79,.1); }
-.testi-card::before {
-  content: '"';
-  position: absolute; top: 20px; right: 24px;
-  font-family: var(--font-disp);
-  font-size: 5rem; color: var(--g2);
-  line-height: 1;
-  user-select: none;
-}
+.testi-card::before { content: '"'; position: absolute; top: 20px; right: 24px; font-family: var(--font-disp); font-size: 5rem; color: var(--g2); line-height: 1; user-select: none; }
 .testi-stars { font-size: .9rem; color: var(--amber); letter-spacing: .1em; margin-bottom: 14px; }
-.testi-text {
-  font-size: .88rem; line-height: 1.8; color: var(--g5);
-  margin-bottom: 22px; position: relative; z-index: 1;
-}
+.testi-text { font-size: .88rem; line-height: 1.8; color: var(--g5); margin-bottom: 22px; position: relative; z-index: 1; }
 .testi-author { display: flex; align-items: center; gap: 12px; }
-.testi-avatar {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: var(--g1); border: 2px solid var(--g2);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem; flex-shrink: 0;
-}
+.testi-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--g1); border: 2px solid var(--g2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
 .testi-name { font-size: .82rem; font-weight: 800; color: var(--ink); }
 .testi-loc { font-size: .68rem; color: var(--g3); margin-top: 2px; }
-.testi-verified {
-  margin-left: auto;
-  display: flex; align-items: center; gap: 4px;
-  font-size: .6rem; font-weight: 700; color: var(--jade);
-  background: rgba(45,106,79,.08); border-radius: 999px;
-  padding: 3px 8px;
-}
+.testi-verified { margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: .6rem; font-weight: 700; color: var(--jade); background: rgba(45,106,79,.08); border-radius: 999px; padding: 3px 8px; }
 
 /* ═══════════════════════════════════════════════════
-   PRICING
+   SHOP CTA
 ═══════════════════════════════════════════════════ */
-.pricing-section {
-  padding: 100px 0;
-  background: var(--ink2);
+.shop-cta-section { padding: 100px 0; background: var(--cream); }
+.shop-cta-inner {
+  background: var(--ink); border-radius: 40px; padding: 70px;
+  display: grid; grid-template-columns: 1fr auto; gap: 60px; align-items: center;
   position: relative; overflow: hidden;
 }
-.pricing-section::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(circle at 50% 100%, rgba(82,183,136,.06) 0%, transparent 55%);
-}
-.pricing-header {
-  text-align: center; margin-bottom: 60px;
-}
-.pricing-header .section-title { color: var(--white); }
-.pricing-header .section-sub { color: rgba(255,255,255,.4); margin: 0 auto; }
-.pricing-header .section-label { justify-content: center; }
-.pricing-header .section-label::before { display: none; }
-.price-grid {
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 24px; max-width: 900px; margin: 0 auto;
-}
-.price-card {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(255,255,255,.1);
-  border-radius: 28px; padding: 32px 28px;
-  position: relative; overflow: hidden;
-  transition: transform .25s, box-shadow .25s;
-}
-.price-card:hover { transform: translateY(-6px); }
-.price-card.featured {
-  background: linear-gradient(160deg, var(--jade), var(--jade2));
-  border-color: transparent;
-  box-shadow: 0 24px 80px rgba(45,106,79,.5);
-  transform: scale(1.04);
-}
-.price-card.featured:hover { transform: scale(1.04) translateY(-6px); }
-.price-featured-badge {
-  position: absolute; top: 20px; right: 20px;
-  background: var(--amber); color: var(--ink);
-  font-size: .6rem; font-weight: 900; letter-spacing: .06em;
-  padding: 4px 12px; border-radius: 999px;
-  text-transform: uppercase;
-}
-.price-plan-name { font-size: .75rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.5); margin-bottom: 16px; }
-.price-card.featured .price-plan-name { color: rgba(255,255,255,.8); }
-.price-amount { display: flex; align-items: flex-start; gap: 4px; margin-bottom: 4px; }
-.price-currency { font-family: var(--mono); font-size: 1.2rem; font-weight: 700; color: var(--white); margin-top: 8px; }
-.price-val { font-family: var(--mono); font-size: 3.2rem; font-weight: 900; color: var(--white); line-height: 1; }
-.price-period { font-size: .72rem; color: rgba(255,255,255,.4); margin-bottom: 20px; }
-.price-card.featured .price-period { color: rgba(255,255,255,.65); }
-.price-divider { height: 1px; background: rgba(255,255,255,.1); margin: 20px 0; }
-.price-features { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
-.price-features li {
-  display: flex; align-items: center; gap: 10px;
-  font-size: .82rem; color: rgba(255,255,255,.65);
-}
-.price-features li::before {
-  content: '✓';
-  width: 20px; height: 20px; border-radius: 50%;
-  background: rgba(255,255,255,.1);
-  color: var(--jade3); font-weight: 900; font-size: .65rem;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.price-card.featured .price-features li { color: rgba(255,255,255,.85); }
-.price-card.featured .price-features li::before { background: rgba(255,255,255,.2); color: var(--white); }
-.price-btn {
-  display: block; width: 100%; padding: 14px;
-  border-radius: 14px; font-size: .88rem; font-weight: 800;
-  text-align: center; text-decoration: none;
-  transition: all .2s; cursor: pointer; border: none;
-}
-.price-btn-outline {
-  background: transparent; color: var(--white);
-  border: 1.5px solid rgba(255,255,255,.2);
-}
-.price-btn-outline:hover { background: rgba(255,255,255,.08); }
-.price-btn-fill {
-  background: var(--white); color: var(--jade);
-}
-.price-btn-fill:hover { background: var(--cream); }
-.price-btn-ghost {
-  background: rgba(255,255,255,.1); color: var(--white);
-  border: 1.5px solid rgba(255,255,255,.18);
-}
-.price-btn-ghost:hover { background: rgba(255,255,255,.18); }
+.shop-cta-inner::before { content: ''; position: absolute; top: -100px; right: 200px; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(82,183,136,.1) 0%, transparent 65%); pointer-events: none; }
+.shop-cta-title { font-family: var(--font-dev); font-size: clamp(1.8rem, 3.5vw, 3rem); color: var(--white); line-height: 1.1; margin-bottom: 16px; }
+.shop-cta-title span { background: linear-gradient(135deg, var(--gold2), var(--amber)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.shop-cta-sub { font-size: .92rem; color: rgba(255,255,255,.45); line-height: 1.8; max-width: 480px; margin-bottom: 36px; }
+.shop-cta-stats { display: flex; gap: 32px; flex-wrap: wrap; }
+.shop-cta-stat-num { font-family: var(--mono); font-size: 1.6rem; font-weight: 900; color: var(--jade3); }
+.shop-cta-stat-label { font-size: .72rem; color: rgba(255,255,255,.35); margin-top: 2px; }
+.shop-cta-right { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 28px; padding: 32px 28px; text-align: center; flex-shrink: 0; position: relative; z-index: 2; }
+.billing-app-icon { width: 140px; height: 140px; background: linear-gradient(135deg, var(--jade), var(--jade3)); border-radius: 32px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 4rem; box-shadow: 0 16px 50px rgba(45,106,79,.5); }
+.billing-app-label { font-size: .72rem; font-weight: 700; color: rgba(255,255,255,.5); margin-bottom: 6px; letter-spacing: .04em; }
+.billing-app-sub { font-size: .62rem; color: rgba(255,255,255,.3); line-height: 1.5; margin-bottom: 16px; }
+.billing-launch-btn { display: block; width: 100%; background: linear-gradient(135deg, var(--jade), var(--jade2)); color: var(--white); padding: 13px; border-radius: 14px; font-size: .88rem; font-weight: 900; text-decoration: none; text-align: center; box-shadow: 0 6px 24px rgba(45,106,79,.4); transition: transform .15s, box-shadow .15s; margin-bottom: 8px; border: none; cursor: pointer; }
+.billing-launch-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(45,106,79,.5); }
 
 /* ═══════════════════════════════════════════════════
-   OPEN THE APP CTA
+   NEWSLETTER
 ═══════════════════════════════════════════════════ */
-.app-cta-section {
-  padding: 100px 0;
-  background: var(--cream);
-}
-.app-cta-inner {
-  background: var(--ink);
-  border-radius: 40px;
-  padding: 70px;
-  display: grid; grid-template-columns: 1fr auto;
-  gap: 60px; align-items: center;
-  position: relative; overflow: hidden;
-}
-.app-cta-inner::before {
-  content: '';
-  position: absolute; top: -100px; right: 200px;
-  width: 400px; height: 400px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(82,183,136,.1) 0%, transparent 65%);
-  pointer-events: none;
-}
-.app-cta-inner::after {
-  content: '';
-  position: absolute; bottom: -80px; right: 0;
-  width: 300px; height: 300px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(201,150,26,.08) 0%, transparent 65%);
-  pointer-events: none;
-}
-.app-cta-content {}
-.app-cta-title {
-  font-family: var(--font-dev);
-  font-size: clamp(1.8rem, 3.5vw, 3rem);
-  color: var(--white); line-height: 1.1; margin-bottom: 16px;
-}
-.app-cta-title span {
-  background: linear-gradient(135deg, var(--gold2), var(--amber));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-.app-cta-sub { font-size: .92rem; color: rgba(255,255,255,.45); line-height: 1.8; max-width: 480px; margin-bottom: 36px; }
-.app-cta-stats {
-  display: flex; gap: 32px; flex-wrap: wrap;
-}
-.app-cta-stat-num {
-  font-family: var(--mono); font-size: 1.6rem; font-weight: 900; color: var(--jade3);
-}
-.app-cta-stat-label { font-size: .72rem; color: rgba(255,255,255,.35); margin-top: 2px; }
-
-.app-cta-qr {
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 28px; padding: 32px 28px;
-  text-align: center; flex-shrink: 0;
-  position: relative; z-index: 2;
-}
-.qr-code-svg {
-  width: 140px; height: 140px;
-  background: var(--white);
-  border-radius: 16px; padding: 12px;
-  margin: 0 auto 16px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 3.5rem;
-}
-.qr-label { font-size: .72rem; font-weight: 700; color: rgba(255,255,255,.5); margin-bottom: 6px; letter-spacing: .04em; }
-.qr-sub { font-size: .62rem; color: rgba(255,255,255,.3); line-height: 1.5; }
-.qr-store-badges {
-  display: flex; flex-direction: column; gap: 8px; margin-top: 16px;
-}
-.qr-store-badge {
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
-  border-radius: 10px; padding: 8px 14px;
-  color: var(--white); font-size: .72rem; font-weight: 700;
-  text-decoration: none; transition: background .2s;
-}
-.qr-store-badge:hover { background: rgba(255,255,255,.13); }
-.qr-store-badge span { font-size: 1.1rem; }
-
-/* ═══════════════════════════════════════════════════
-   NEWSLETTER / STAY CONNECTED
-═══════════════════════════════════════════════════ */
-.newsletter-section {
-  background: linear-gradient(135deg, var(--jade), var(--jade2));
-  padding: 70px 0;
-  position: relative; overflow: hidden;
-}
-.newsletter-section::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(
-    45deg, transparent, transparent 30px,
-    rgba(255,255,255,.02) 30px, rgba(255,255,255,.02) 60px
-  );
-}
-.newsletter-inner {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 60px; align-items: center;
-}
-.newsletter-title {
-  font-family: var(--font-dev); font-size: clamp(1.4rem, 2.8vw, 2.2rem);
-  color: var(--white); line-height: 1.15; margin-bottom: 10px;
-}
+.newsletter-section { background: linear-gradient(135deg, var(--jade), var(--jade2)); padding: 70px 0; position: relative; overflow: hidden; }
+.newsletter-section::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent, transparent 30px, rgba(255,255,255,.02) 30px, rgba(255,255,255,.02) 60px); }
+.newsletter-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+.newsletter-title { font-family: var(--font-dev); font-size: clamp(1.4rem, 2.8vw, 2.2rem); color: var(--white); line-height: 1.15; margin-bottom: 10px; }
 .newsletter-sub { font-size: .88rem; color: rgba(255,255,255,.65); line-height: 1.7; }
 .newsletter-form { display: flex; flex-direction: column; gap: 12px; }
 .newsletter-input-row { display: flex; gap: 10px; }
-.newsletter-input {
-  flex: 1;
-  background: rgba(255,255,255,.15);
-  border: 1.5px solid rgba(255,255,255,.25);
-  border-radius: 14px; padding: 14px 18px;
-  color: var(--white); font-family: var(--font); font-size: .88rem;
-  transition: border-color .2s, background .2s;
-}
+.newsletter-input { flex: 1; background: rgba(255,255,255,.15); border: 1.5px solid rgba(255,255,255,.25); border-radius: 14px; padding: 14px 18px; color: var(--white); font-family: var(--font); font-size: .88rem; transition: border-color .2s, background .2s; }
 .newsletter-input::placeholder { color: rgba(255,255,255,.45); }
 .newsletter-input:focus { outline: none; border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.2); }
-.newsletter-btn {
-  background: var(--white); color: var(--jade);
-  padding: 14px 24px; border-radius: 14px;
-  font-size: .88rem; font-weight: 900;
-  border: none; cursor: pointer; white-space: nowrap;
-  transition: transform .15s, box-shadow .15s;
-}
+.newsletter-btn { background: var(--white); color: var(--jade); padding: 14px 24px; border-radius: 14px; font-size: .88rem; font-weight: 900; border: none; cursor: pointer; white-space: nowrap; transition: transform .15s, box-shadow .15s; }
 .newsletter-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
 .newsletter-note { font-size: .68rem; color: rgba(255,255,255,.45); }
-.whatsapp-btn {
-  display: inline-flex; align-items: center; gap: 10px;
-  background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.25);
-  color: var(--white); padding: 14px 20px; border-radius: 14px;
-  font-size: .85rem; font-weight: 800;
-  text-decoration: none; transition: background .2s;
-}
+.whatsapp-btn { display: inline-flex; align-items: center; gap: 10px; background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.25); color: var(--white); padding: 14px 20px; border-radius: 14px; font-size: .85rem; font-weight: 800; text-decoration: none; transition: background .2s; }
 .whatsapp-btn:hover { background: rgba(255,255,255,.18); }
 
 /* ═══════════════════════════════════════════════════
    FOOTER
 ═══════════════════════════════════════════════════ */
-footer {
-  background: var(--ink);
-  border-top: 1px solid rgba(255,255,255,.06);
-}
-.footer-main {
-  max-width: 1280px; margin: 0 auto;
-  padding: 70px 5% 50px;
-  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-  gap: 40px;
-}
-.footer-brand {}
-.footer-logo {
-  display: inline-flex; align-items: center; gap: 12px;
-  text-decoration: none; margin-bottom: 20px;
-}
-.footer-logo-box {
-  width: 46px; height: 46px; border-radius: 14px;
-  background: linear-gradient(135deg, var(--jade), var(--jade3));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem;
-}
+footer { background: var(--ink); border-top: 1px solid rgba(255,255,255,.06); }
+.footer-main { max-width: 1280px; margin: 0 auto; padding: 70px 5% 50px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 40px; }
+.footer-logo { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; margin-bottom: 20px; }
+.footer-logo-box { width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg, var(--jade), var(--jade3)); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; overflow: hidden; }
+.footer-logo-box img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
 .footer-logo-name { font-family: var(--font-dev); font-size: 1.2rem; color: var(--white); }
-.footer-tagline {
-  font-size: .8rem; color: rgba(255,255,255,.35); line-height: 1.8;
-  max-width: 240px; margin-bottom: 24px;
-}
+.footer-tagline { font-size: .8rem; color: rgba(255,255,255,.35); line-height: 1.8; max-width: 240px; margin-bottom: 24px; }
 .footer-socials { display: flex; gap: 10px; }
-.footer-social-btn {
-  width: 38px; height: 38px; border-radius: 11px;
-  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
-  color: rgba(255,255,255,.5); font-size: .95rem;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: background .2s, color .2s;
-  text-decoration: none;
-}
+.footer-social-btn { width: 38px; height: 38px; border-radius: 11px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.5); font-size: .95rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background .2s, color .2s; text-decoration: none; }
 .footer-social-btn:hover { background: rgba(82,183,136,.15); color: var(--leaf); }
-
-.footer-col-title {
-  font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
-  color: rgba(255,255,255,.5); margin-bottom: 20px;
-}
+.footer-col-title { font-size: .7rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.5); margin-bottom: 20px; }
 .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
-.footer-links a {
-  text-decoration: none; font-size: .82rem; color: rgba(255,255,255,.35);
-  transition: color .2s;
-  display: flex; align-items: center; gap: 6px;
-}
+.footer-links a { text-decoration: none; font-size: .82rem; color: rgba(255,255,255,.35); transition: color .2s; display: flex; align-items: center; gap: 6px; }
 .footer-links a:hover { color: var(--leaf); }
-
-.footer-bottom {
-  border-top: 1px solid rgba(255,255,255,.06);
-  padding: 24px 5%;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
-  max-width: 1280px; margin: 0 auto;
-}
+.footer-bottom { border-top: 1px solid rgba(255,255,255,.06); padding: 24px 5%; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; max-width: 1280px; margin: 0 auto; }
 .footer-copy { font-size: .75rem; color: rgba(255,255,255,.25); }
 .footer-copy span { color: var(--red); }
-.footer-copy .flag { color: initial; }
 .footer-badges { display: flex; gap: 10px; flex-wrap: wrap; }
-.footer-badge {
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
-  border-radius: 8px; padding: 5px 10px;
-  font-size: .62rem; font-weight: 700; color: rgba(255,255,255,.3);
-}
+.footer-badge { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 8px; padding: 5px 10px; font-size: .62rem; font-weight: 700; color: rgba(255,255,255,.3); }
 
 /* ═══════════════════════════════════════════════════
    MINI CART SIDEBAR
 ═══════════════════════════════════════════════════ */
-.cart-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.5);
-  z-index: 500; opacity: 0; pointer-events: none;
-  backdrop-filter: blur(4px);
-  transition: opacity .3s;
-}
+.cart-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 500; opacity: 0; pointer-events: none; backdrop-filter: blur(4px); transition: opacity .3s; }
 .cart-overlay.open { opacity: 1; pointer-events: auto; }
-.cart-sidebar {
-  position: fixed; top: 0; right: 0; bottom: 0;
-  width: 100%; max-width: 400px;
-  background: var(--white);
-  box-shadow: -20px 0 80px rgba(0,0,0,.2);
-  transform: translateX(100%);
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
-  z-index: 501;
-  display: flex; flex-direction: column;
-}
+.cart-sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 400px; background: var(--white); box-shadow: -20px 0 80px rgba(0,0,0,.2); transform: translateX(100%); transition: transform .35s cubic-bezier(.4,0,.2,1); z-index: 501; display: flex; flex-direction: column; }
 .cart-overlay.open .cart-sidebar { transform: translateX(0); }
-.cart-header {
-  padding: 24px 20px 20px;
-  border-bottom: 1px solid var(--g2);
-  display: flex; align-items: center; justify-content: space-between;
-  flex-shrink: 0;
-}
+.cart-header { padding: 24px 20px 20px; border-bottom: 1px solid var(--g2); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .cart-title { font-size: 1rem; font-weight: 900; color: var(--ink); }
-.cart-close {
-  width: 38px; height: 38px; border-radius: 11px;
-  background: var(--g1); border: none; cursor: pointer;
-  font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
-  color: var(--g4); transition: background .2s;
-}
+.cart-close { width: 38px; height: 38px; border-radius: 11px; background: var(--g1); border: none; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; color: var(--g4); transition: background .2s; }
 .cart-close:hover { background: var(--g2); }
 .cart-items { flex: 1; overflow-y: auto; padding: 16px 20px; }
-.cart-item {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--g1);
-}
+.cart-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--g1); }
 .cart-item:last-child { border: none; }
-.cart-item-img {
-  width: 56px; height: 56px; border-radius: 14px;
-  background: var(--g1); flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.8rem;
-}
+.cart-item-img { width: 56px; height: 56px; border-radius: 14px; background: var(--g1); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; overflow: hidden; }
+.cart-item-img img { width: 100%; height: 100%; object-fit: cover; }
 .cart-item-info { flex: 1; min-width: 0; }
 .cart-item-name { font-size: .85rem; font-weight: 800; color: var(--ink); margin-bottom: 3px; }
 .cart-item-meta { font-size: .7rem; color: var(--g3); font-family: var(--mono); }
 .cart-item-price { font-family: var(--mono); font-size: .95rem; font-weight: 900; color: var(--jade); flex-shrink: 0; }
-.cart-item-qty {
-  display: flex; align-items: center; gap: 8px;
-  margin-top: 6px;
-}
-.cart-qty-btn {
-  width: 24px; height: 24px; border-radius: 7px;
-  background: var(--g1); border: 1px solid var(--g2);
-  font-size: .8rem; cursor: pointer; display: flex;
-  align-items: center; justify-content: center;
-  transition: background .15s;
-}
+.cart-item-qty { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.cart-qty-btn { width: 24px; height: 24px; border-radius: 7px; background: var(--g1); border: 1px solid var(--g2); font-size: .8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
 .cart-qty-btn:hover { background: var(--g2); }
 .cart-qty-num { font-family: var(--mono); font-size: .8rem; font-weight: 800; min-width: 20px; text-align: center; }
-.cart-footer {
-  padding: 20px;
-  border-top: 1px solid var(--g2);
-  flex-shrink: 0;
-}
-.cart-subtotal {
-  display: flex; justify-content: space-between;
-  margin-bottom: 8px;
-}
+.cart-footer { padding: 20px; border-top: 1px solid var(--g2); flex-shrink: 0; }
+.cart-subtotal { display: flex; justify-content: space-between; margin-bottom: 8px; }
 .cart-subtotal-label { font-size: .82rem; color: var(--g4); font-weight: 600; }
 .cart-subtotal-val { font-family: var(--mono); font-size: .95rem; font-weight: 900; color: var(--ink); }
-.cart-checkout-btn {
-  display: block; width: 100%;
-  background: linear-gradient(135deg, var(--jade), var(--jade2));
-  color: var(--white); padding: 15px;
-  border-radius: 14px; border: none; cursor: pointer;
-  font-family: var(--font); font-size: .92rem; font-weight: 900;
-  box-shadow: 0 8px 28px rgba(45,106,79,.4);
-  transition: transform .15s, box-shadow .15s;
-  margin-top: 14px;
-  text-align: center;
-}
+.cart-checkout-btn { display: block; width: 100%; background: linear-gradient(135deg, var(--jade), var(--jade2)); color: var(--white); padding: 15px; border-radius: 14px; border: none; cursor: pointer; font-family: var(--font); font-size: .92rem; font-weight: 900; box-shadow: 0 8px 28px rgba(45,106,79,.4); transition: transform .15s, box-shadow .15s; margin-top: 14px; text-align: center; }
 .cart-checkout-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(45,106,79,.5); }
-.cart-empty {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 12px;
-  padding: 40px;
-}
+.cart-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 40px; }
 .cart-empty-icon { font-size: 4rem; opacity: .4; }
 .cart-empty-text { font-size: .88rem; color: var(--g3); text-align: center; line-height: 1.6; }
 
-/* ═══════════════════════════════════════════════════
-   SEARCH MODAL
-═══════════════════════════════════════════════════ */
-.search-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.7);
-  z-index: 500; opacity: 0; pointer-events: none;
-  backdrop-filter: blur(8px);
-  transition: opacity .25s;
-  display: flex; align-items: flex-start; justify-content: center;
-  padding-top: 80px;
-}
+/* ── SEARCH MODAL ── */
+.search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 500; opacity: 0; pointer-events: none; backdrop-filter: blur(8px); transition: opacity .25s; display: flex; align-items: flex-start; justify-content: center; padding-top: 80px; }
 .search-overlay.open { opacity: 1; pointer-events: auto; }
-.search-box {
-  width: 100%; max-width: 600px; margin: 0 20px;
-}
-.search-input-wrap {
-  display: flex; align-items: center; gap: 12px;
-  background: var(--white);
-  border-radius: 20px; padding: 14px 20px;
-  box-shadow: 0 20px 80px rgba(0,0,0,.4);
-}
+.search-box { width: 100%; max-width: 600px; margin: 0 20px; }
+.search-input-wrap { display: flex; align-items: center; gap: 12px; background: var(--white); border-radius: 20px; padding: 14px 20px; box-shadow: 0 20px 80px rgba(0,0,0,.4); }
 .search-icon { font-size: 1.2rem; color: var(--g3); flex-shrink: 0; }
-.search-input {
-  flex: 1; border: none; outline: none;
-  font-family: var(--font); font-size: 1rem;
-  color: var(--ink); background: transparent;
-}
+.search-input { flex: 1; border: none; outline: none; font-family: var(--font); font-size: 1rem; color: var(--ink); background: transparent; }
 .search-input::placeholder { color: var(--g3); }
-.search-close-btn {
-  background: var(--g1); border: none; cursor: pointer;
-  width: 30px; height: 30px; border-radius: 8px;
-  font-size: .8rem; display: flex; align-items: center; justify-content: center;
-  color: var(--g4); flex-shrink: 0;
-}
-.search-results {
-  background: var(--white); border-radius: 16px; margin-top: 8px;
-  overflow: hidden;
-  box-shadow: 0 12px 50px rgba(0,0,0,.3);
-  display: none;
-}
+.search-close-btn { background: var(--g1); border: none; cursor: pointer; width: 30px; height: 30px; border-radius: 8px; font-size: .8rem; display: flex; align-items: center; justify-content: center; color: var(--g4); flex-shrink: 0; }
+.search-results { background: var(--white); border-radius: 16px; margin-top: 8px; overflow: hidden; box-shadow: 0 12px 50px rgba(0,0,0,.3); display: none; }
 .search-results.show { display: block; }
-.search-result-item {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--g1);
-  cursor: pointer; transition: background .2s;
-}
+.search-result-item { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--g1); cursor: pointer; transition: background .2s; }
 .search-result-item:last-child { border: none; }
 .search-result-item:hover { background: var(--g1); }
 .search-result-icon { font-size: 1.6rem; flex-shrink: 0; }
@@ -1541,42 +749,19 @@ footer {
 .search-result-cat { font-size: .7rem; color: var(--g3); margin-top: 2px; }
 .search-result-price { font-family: var(--mono); font-size: .88rem; font-weight: 900; color: var(--jade); margin-left: auto; flex-shrink: 0; }
 
-/* ═══════════════════════════════════════════════════
-   TOAST NOTIFICATION
-═══════════════════════════════════════════════════ */
-#toast-container {
-  position: fixed; bottom: 30px; left: 50%;
-  transform: translateX(-50%);
-  z-index: 9997;
-  display: flex; flex-direction: column; gap: 8px;
-  pointer-events: none;
-  align-items: center;
-}
-.toast-item {
-  background: var(--ink);
-  color: var(--white);
-  padding: 12px 24px; border-radius: 999px;
-  font-size: .82rem; font-weight: 700;
-  box-shadow: 0 8px 30px rgba(0,0,0,.4);
-  border: 1px solid rgba(255,255,255,.1);
-  white-space: nowrap;
-  animation: toastIn .35s cubic-bezier(.34,1.56,.64,1) both;
-}
+/* ── TOAST ── */
+#toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 9997; display: flex; flex-direction: column; gap: 8px; pointer-events: none; align-items: center; }
+.toast-item { background: var(--ink); color: var(--white); padding: 12px 24px; border-radius: 999px; font-size: .82rem; font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.1); white-space: nowrap; animation: toastIn .35s cubic-bezier(.34,1.56,.64,1) both; }
 .toast-item.out { animation: toastOut .3s ease both; }
 @keyframes toastIn { from{opacity:0;transform:translateY(16px) scale(.9)} to{opacity:1;transform:translateY(0) scale(1)} }
 @keyframes toastOut { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(.9)} }
 
-/* ═══════════════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════════════ */
+/* ── RESPONSIVE ── */
 @media (max-width: 1100px) {
-  .cat-grid { grid-template-columns: repeat(4, 1fr); }
+  .veggie-cat-grid { grid-template-columns: repeat(4, 1fr); }
   .prod-grid { grid-template-columns: repeat(3, 1fr); }
-  .prod-card.featured { grid-column: span 1; flex-direction: column; }
-  .prod-card.featured .prod-card-img { width: 100%; height: 160px; }
   .footer-main { grid-template-columns: 1fr 1fr 1fr; gap: 30px; }
 }
-
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; min-height: auto; }
   .hero-content { padding: 100px 5% 60px; text-align: center; }
@@ -1585,61 +770,51 @@ footer {
   .hero-sub { margin: 0 auto 40px; }
   .hero-visual { display: none; }
   .how-grid { grid-template-columns: 1fr; gap: 50px; }
-  .inperson-grid { grid-template-columns: 1fr; gap: 50px; }
+  .billing-grid { grid-template-columns: 1fr; gap: 50px; }
   .newsletter-inner { grid-template-columns: 1fr; gap: 30px; }
-  .app-cta-inner { grid-template-columns: 1fr; gap: 40px; padding: 50px 36px; }
-  .app-cta-qr { margin: 0 auto; }
-  .price-grid { grid-template-columns: 1fr; max-width: 400px; }
-  .price-card.featured { transform: none; }
-  .cat-grid { grid-template-columns: repeat(3, 1fr); }
+  .shop-cta-inner { grid-template-columns: 1fr; gap: 40px; padding: 50px 36px; }
+  .shop-cta-right { margin: 0 auto; }
+  .veggie-cat-grid { grid-template-columns: repeat(3, 1fr); }
   .prod-grid { grid-template-columns: repeat(2, 1fr); }
   .testi-grid { grid-template-columns: 1fr 1fr; }
   .flash-inner { grid-template-columns: 1fr; gap: 30px; }
-  .flash-countdown { justify-content: flex-start; }
 }
-
 @media (max-width: 640px) {
   .nav-links { display: none; }
-  .nav-open-app { display: none; }
+  .nav-billing-btn { display: none; }
   .nav-ham { display: flex; }
   .mobile-nav { display: block; }
-  .cat-grid { grid-template-columns: repeat(2, 1fr); }
+  .veggie-cat-grid { grid-template-columns: repeat(2, 1fr); }
   .prod-grid { grid-template-columns: 1fr 1fr; }
   .testi-grid { grid-template-columns: 1fr; }
   .footer-main { grid-template-columns: 1fr 1fr; }
-  .hero h1 { font-size: clamp(2.2rem, 9vw, 3.5rem); }
-  .announce-ticker { animation-duration: 12s; }
-  .inperson-visual { grid-template-columns: 1fr 1fr; }
   .newsletter-input-row { flex-direction: column; }
-  .app-cta-inner { padding: 40px 24px; }
+  .shop-cta-inner { padding: 40px 24px; }
   .fc-num { width: 55px; height: 55px; font-size: 1.4rem; }
 }
-
 @media (max-width: 400px) {
   .prod-grid { grid-template-columns: 1fr; }
-  .cat-grid { grid-template-columns: repeat(2, 1fr); }
+  .veggie-cat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
 </head>
 <body>
 
-<!-- SCROLL PROGRESS -->
 <div id="scroll-progress"></div>
 
-<!-- ANNOUNCEMENT BAR -->
-<div class="announce-bar" role="banner" aria-label="Announcements">
+<!-- ANNOUNCEMENT BAR — controlled by billing system shop name -->
+<div class="announce-bar" role="banner">
   <div class="announce-ticker" aria-hidden="true">
-    <span>🌿 निःशुल्क App डाउनलोड गर्नुस् — आजै सुरु!</span>
-    <span>🎉 Offline & Online दुवै काम गर्छ — Internet नचाहिने!</span>
-    <span>📲 WhatsApp मा Bill पठाउनुस् — ग्राहक खुसी हुन्छन्!</span>
-    <span>✨ 5,000+ दोकानले विश्वास गरे — तपाईंको पालो!</span>
-    <span>💰 Rs.299/month मात्र — ठूलो काम, सानो लगानी!</span>
-    <!-- Duplicate for seamless loop -->
-    <span>🌿 निःशुल्क App डाउनलोड गर्नुस् — आजै सुरु!</span>
-    <span>🎉 Offline & Online दुवै काम गर्छ — Internet नचाहिने!</span>
-    <span>📲 WhatsApp मा Bill पठाउनुस् — ग्राहक खुसी हुन्छन्!</span>
-    <span>✨ 5,000+ दोकानले विश्वास गरे — तपाईंको पालो!</span>
-    <span>💰 Rs.299/month मात्र — ठूलो काम, सानो लगानी!</span>
+    <span>🥬 ताजा तरकारी — हरेक दिन बिहान ल्याइन्छ!</span>
+    <span>⚖️ सही तौल, सही मूल्य — Billing System द्वारा नियन्त्रित</span>
+    <span>📲 WhatsApp मा Order गर्नुस् — घरमै पुग्छ!</span>
+    <span>🌿 किसानबाट सिधै — ताजा र शुद्ध</span>
+    <span>💰 कालिमाटी मूल्यमा आधारित — उचित भाउ</span>
+    <span>🥬 ताजा तरकारी — हरेक दिन बिहान ल्याइन्छ!</span>
+    <span>⚖️ सही तौल, सही मूल्य — Billing System द्वारा नियन्त्रित</span>
+    <span>📲 WhatsApp मा Order गर्नुस् — घरमै पुग्छ!</span>
+    <span>🌿 किसानबाट सिधै — ताजा र शुद्ध</span>
+    <span>💰 कालिमाटी मूल्यमा आधारित — उचित भाउ</span>
   </div>
 </div>
 
@@ -1647,24 +822,25 @@ footer {
 <nav id="main-nav">
   <div class="nav-inner">
     <a href="#" class="nav-brand" aria-label="घरायेसी Home">
-      <div class="nav-logo">🌿</div>
+      <div class="nav-logo" id="nav-logo-el">
+        <span id="nav-logo-inner">🥬</span>
+      </div>
       <div class="nav-name-wrap">
-        <div class="nav-name">घरायेसी</div>
-        <div class="nav-tagline">आफ्नै मानिसको दोकान</div>
+        <div class="nav-name" id="nav-shop-name">घरायेसी</div>
+        <div class="nav-tagline">ताजा तरकारी पसल</div>
       </div>
     </a>
 
     <ul class="nav-links" role="navigation">
-      <li><a href="#categories">उत्पादनहरू</a></li>
+      <li><a href="#products">तरकारीहरू</a></li>
       <li><a href="#how-it-works">कसरी काम गर्छ</a></li>
-      <li><a href="#inperson">Offline Sales</a></li>
+      <li><a href="#billing">Billing System</a></li>
       <li><a href="#testimonials">Reviews</a></li>
-      <li><a href="#pricing">मूल्य</a></li>
     </ul>
 
     <div class="nav-right">
       <button class="nav-search-btn" id="search-trigger" aria-label="Search">🔍</button>
-      <a href="#download" class="nav-open-app">📱 App खोल्नुस्</a>
+      <a href="gharayesicalculatorbillingsystem.html" class="nav-billing-btn">⚖️ Billing खोल्नुस्</a>
       <button class="nav-cart-btn" id="cart-trigger" aria-label="Shopping Cart">
         🛒 Cart
         <span class="cart-count" id="cart-count">0</span>
@@ -1676,129 +852,89 @@ footer {
   </div>
 </nav>
 
-<!-- MOBILE NAV DRAWER -->
+<!-- MOBILE NAV -->
 <div class="mobile-nav" id="mobile-nav" role="dialog" aria-modal="true" aria-label="Navigation Menu">
   <div class="mobile-nav-panel">
-    <div class="mobile-nav-close">
-      <button id="mobile-nav-close">✕</button>
-    </div>
+    <div class="mobile-nav-close"><button id="mobile-nav-close">✕</button></div>
     <nav class="mobile-nav-links">
-      <a href="#categories"><span>🥬</span> उत्पादनहरू</a>
+      <a href="#products"><span>🥬</span> तरकारीहरू</a>
       <a href="#how-it-works"><span>⚙️</span> कसरी काम गर्छ</a>
-      <a href="#inperson"><span>🏪</span> Offline Sales</a>
+      <a href="#billing"><span>⚖️</span> Billing System</a>
       <a href="#testimonials"><span>⭐</span> Reviews</a>
-      <a href="#pricing"><span>💰</span> मूल्य</a>
-      <a href="#download"><span>📲</span> App डाउनलोड</a>
+      <a href="gharayesicalculatorbillingsystem.html"><span>📲</span> Billing App खोल्नुस्</a>
     </nav>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     HERO
-══════════════════════════════════════════ -->
+<!-- ══════════════════ HERO ══════════════════ -->
 <section class="hero" aria-label="Hero Banner">
-
-  <!-- Left -->
   <div class="hero-content">
     <div class="hero-eyebrow">
       <span class="hero-eyebrow-dot"></span>
-      नेपालको नम्बर १ किराना App
+      नेपालको ताजा तरकारी पसल
     </div>
-
     <h1>
-      तपाईंको<br/>
-      <em class="gold-text">दोकान,</em><br/>
-      <span class="outline-text">Digital</span>
+      ताजा<br/>
+      <em class="gold-text">तरकारी,</em><br/>
+      <span class="outline-text">घरैमा</span>
     </h1>
-
     <p class="hero-sub">
-      आफ्नो घरायेसी दोकानलाई अहिले नै Online &amp; Offline दुवैतर्फ चलाउनुस् — हिसाब सफा, ग्राहक खुसी, बिल WhatsApp मा।
+      हरेक दिन बिहान किसानबाट सिधै — ताजा, शुद्ध र उचित मूल्यमा। हाम्रो Billing System ले सबै हिसाब सफा राख्छ।
     </p>
-
     <div class="hero-badges">
-      <div class="hero-badge-pill"><span>⚡</span> Offline काम गर्छ</div>
-      <div class="hero-badge-pill"><span>📲</span> WhatsApp बिल</div>
-      <div class="hero-badge-pill"><span>🔒</span> PIN सुरक्षा</div>
-      <div class="hero-badge-pill"><span>☁️</span> Cloud Sync</div>
+      <div class="hero-badge-pill"><span>🥬</span> रोज ताजा</div>
+      <div class="hero-badge-pill"><span>⚖️</span> सही तौल</div>
+      <div class="hero-badge-pill"><span>📲</span> WhatsApp Order</div>
+      <div class="hero-badge-pill"><span>🌿</span> किसानबाट सिधै</div>
     </div>
-
     <div class="hero-actions">
-      <a href="gharayesicalculatorbillingsystem.html" class="btn-primary">
-        🌿 App खोल्नुस् — निःशुल्क
-      </a>
-      <a href="#how-it-works" class="btn-secondary">
-        ▶ कसरी काम गर्छ हेर्नुस्
-      </a>
+      <a href="#products" class="btn-primary">🥬 तरकारी हेर्नुस्</a>
+      <a href="gharayesicalculatorbillingsystem.html" class="btn-secondary">⚖️ Billing App</a>
     </div>
   </div>
 
-  <!-- Right: Shop Window Visual -->
   <div class="hero-visual" aria-hidden="true">
     <div class="hero-glow-a"></div>
     <div class="hero-glow-b"></div>
-    <div class="hero-bg-text">घ</div>
+    <div class="hero-bg-text">त</div>
 
-    <!-- Floating badge elements -->
     <div class="hero-float-el hfe-1">✅ बिल तयार भयो!</div>
     <div class="hero-float-el hfe-2">📲 WhatsApp पठायो</div>
-    <div class="hero-float-el hfe-3">⚡ Offline mode ON</div>
+    <div class="hero-float-el hfe-3">🥬 ताजा आइपुग्यो!</div>
 
-    <div class="shop-window">
-      <!-- Header -->
+    <!-- Live shop window — JS fills this from Firebase -->
+    <div class="shop-window" id="hero-shop-window">
       <div class="shop-window-header">
         <div class="shop-win-logo">
-          <div class="shop-win-icon">🌿</div>
+          <div class="shop-win-icon" id="hero-win-icon"><span>🥬</span></div>
           <div>
-            <div class="shop-win-name">रामजी किराना</div>
-            <div class="shop-win-sub">POWERED BY घरायेसी</div>
+            <div class="shop-win-name" id="hero-win-name">घरायेसी</div>
+            <div class="shop-win-sub">ताजा तरकारी पसल</div>
           </div>
         </div>
         <div class="shop-win-stats">
           <div class="shop-win-stat">
-            <div class="shop-win-stat-num">47</div>
-            <div class="shop-win-stat-label">आजको बिल</div>
+            <div class="shop-win-stat-num" id="hero-stat-products">—</div>
+            <div class="shop-win-stat-label">उत्पादन</div>
           </div>
           <div class="shop-win-stat">
-            <div class="shop-win-stat-num">12k</div>
-            <div class="shop-win-stat-label">आजको आम्दानी</div>
+            <div class="shop-win-stat-num">रोज</div>
+            <div class="shop-win-stat-label">ताजा</div>
           </div>
           <div class="shop-win-stat">
-            <div class="shop-win-stat-num">32</div>
-            <div class="shop-win-stat-label">Items</div>
+            <div class="shop-win-stat-num">Live</div>
+            <div class="shop-win-stat-label">मूल्य</div>
           </div>
         </div>
       </div>
-      <!-- Body -->
       <div class="shop-window-body">
-        <div class="shop-prod-list">
-          <div class="shop-prod-row">
-            <div class="shop-prod-emoji">🌾</div>
-            <div class="shop-prod-info">
-              <div class="shop-prod-name">चामल (Basmati)</div>
-              <div class="shop-prod-meta">5 kg × Rs.95</div>
-            </div>
-            <div class="shop-prod-price">Rs.475</div>
-          </div>
-          <div class="shop-prod-row">
-            <div class="shop-prod-emoji">🫙</div>
-            <div class="shop-prod-info">
-              <div class="shop-prod-name">सरसोको तेल</div>
-              <div class="shop-prod-meta">1 L × Rs.190</div>
-            </div>
-            <div class="shop-prod-price">Rs.190</div>
-          </div>
-          <div class="shop-prod-row">
-            <div class="shop-prod-emoji">🧂</div>
-            <div class="shop-prod-info">
-              <div class="shop-prod-name">नुन</div>
-              <div class="shop-prod-meta">2 kg × Rs.35</div>
-            </div>
-            <div class="shop-prod-price">Rs.70</div>
-          </div>
+        <div class="shop-prod-list" id="hero-prod-list">
+          <!-- Filled by JS from Firebase -->
+          <div class="shop-prod-row"><div class="shop-prod-emoji">🥬</div><div class="shop-prod-info"><div class="shop-prod-name">लोड हुँदैछ...</div><div class="shop-prod-meta">Firebase बाट</div></div><div class="shop-prod-price">—</div></div>
         </div>
         <div class="shop-win-total">
-          <div class="shop-win-total-label">💰 जम्मा रकम</div>
-          <div class="shop-win-total-amt">Rs. 735</div>
+          <div class="shop-win-total-label">💰 Live मूल्य</div>
+          <div class="shop-win-total-amt" id="hero-win-total">Billing App मा</div>
         </div>
       </div>
     </div>
@@ -1810,43 +946,38 @@ footer {
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     TRUST STRIP
-══════════════════════════════════════════ -->
+<!-- TRUST STRIP -->
 <div class="trust-strip" aria-label="Trust Indicators">
   <div class="trust-marquee" aria-hidden="true">
-    <div class="trust-item"><span class="ti-icon">🌿</span> 5,000+ दोकानमा भरोसा</div>
+    <div class="trust-item"><span class="ti-icon">🥬</span> हरेक दिन ताजा तरकारी</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><span class="ti-icon">📍</span> काठमाडौं · पोखरा · भक्तपुर · धरान · बुटवल</div>
+    <div class="trust-item"><span class="ti-icon">📍</span> सरस्वतीखेल, भक्तपुर</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><span class="ti-icon">⚡</span> Offline काम गर्छ — Internet नचाहिने</div>
+    <div class="trust-item"><span class="ti-icon">⚖️</span> Billing System — सही तौल र मूल्य</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><span class="ti-icon">📲</span> WhatsApp बिल — ग्राहक खुसी</div>
+    <div class="trust-item"><span class="ti-icon">📲</span> WhatsApp Order — घरमै डेलिभरी</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><span class="ti-icon">🔒</span> PIN सुरक्षित — तपाईंको मात्र पहुँच</div>
+    <div class="trust-item"><span class="ti-icon">🌿</span> किसानबाट सिधै — बिचौलिया छैन</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><span class="ti-icon">☁️</span> Cloud Sync — सबै डिभाइसमा</div>
+    <div class="trust-item"><span class="ti-icon">💰</span> कालिमाटी मूल्यमा आधारित</div>
     <div class="trust-sep"></div>
-    <!-- Duplicates for loop -->
-    <div class="trust-item"><span class="ti-icon">🌿</span> 5,000+ दोकानमा भरोसा</div>
+    <div class="trust-item"><span class="ti-icon">🥬</span> हरेक दिन ताजा तरकारी</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><span class="ti-icon">📍</span> काठमाडौं · पोखरा · भक्तपुर · धरान · बुटवल</div>
+    <div class="trust-item"><span class="ti-icon">📍</span> सरस्वतीखेल, भक्तपुर</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><span class="ti-icon">⚡</span> Offline काम गर्छ — Internet नचाहिने</div>
+    <div class="trust-item"><span class="ti-icon">⚖️</span> Billing System — सही तौल र मूल्य</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><span class="ti-icon">📲</span> WhatsApp बिल — ग्राहक खुसी</div>
+    <div class="trust-item"><span class="ti-icon">📲</span> WhatsApp Order — घरमै डेलिभरी</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><span class="ti-icon">🔒</span> PIN सुरक्षित — तपाईंको मात्र पहुँच</div>
+    <div class="trust-item"><span class="ti-icon">🌿</span> किसानबाट सिधै — बिचौलिया छैन</div>
     <div class="trust-sep"></div>
-    <div class="trust-item"><span class="ti-icon">☁️</span> Cloud Sync — सबै डिभाइसमा</div>
+    <div class="trust-item"><span class="ti-icon">💰</span> कालिमाटी मूल्यमा आधारित</div>
     <div class="trust-sep"></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     FLASH SALE / PROMO
-══════════════════════════════════════════ -->
-<section class="flash-section" aria-label="Flash Sale">
+<!-- FLASH SALE -->
+<section class="flash-section" aria-label="Today's Special">
   <div class="section-wrap">
     <div class="flash-inner reveal">
       <div class="flash-content">
@@ -1855,24 +986,24 @@ footer {
           आजको विशेष अफर
         </div>
         <h2 class="flash-title">
-          व्यापारी Plan लिनुस् —<br/>
-          <span>पहिलो महिना आधा मूल्यमा!</span>
+          ताजा तरकारी —<br/>
+          <span>आजको मूल्यमा Order गर्नुस्!</span>
         </h2>
-        <p class="flash-sub">Rs.299 को सट्टा Rs.149 मा — सीमित समयका लागि। आजै App डाउनलोड गर्नुस् र Coupon Code <strong style="color:var(--amber);">GHARAYESI50</strong> प्रयोग गर्नुस्।</p>
+        <p class="flash-sub">मूल्य हरेक दिन Billing System बाट अपडेट हुन्छ। WhatsApp मा <strong style="color:var(--amber);">9709612863</strong> मा सम्पर्क गर्नुस् र घरमै पाउनुस्।</p>
       </div>
-      <div class="flash-countdown" aria-label="Countdown Timer">
+      <div class="flash-countdown" aria-label="Shop Closing Time">
         <div class="fc-unit">
-          <div class="fc-num" id="fc-h">11</div>
-          <div class="fc-label">घण्टा</div>
+          <div class="fc-num" id="fc-h">08</div>
+          <div class="fc-label">घण्टा बाँकी</div>
         </div>
         <div class="fc-sep">:</div>
         <div class="fc-unit">
-          <div class="fc-num" id="fc-m">47</div>
+          <div class="fc-num" id="fc-m">00</div>
           <div class="fc-label">मिनेट</div>
         </div>
         <div class="fc-sep">:</div>
         <div class="fc-unit">
-          <div class="fc-num" id="fc-s">33</div>
+          <div class="fc-num" id="fc-s">00</div>
           <div class="fc-label">सेकेन्ड</div>
         </div>
       </div>
@@ -1880,352 +1011,154 @@ footer {
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     CATEGORIES
-══════════════════════════════════════════ -->
-<section class="categories-section" id="categories" aria-label="Product Categories">
+<!-- ══════════════════ VEGGIE CATEGORIES ══════════════════ -->
+<section class="categories-section" id="categories" aria-label="Vegetable Categories">
   <div class="section-wrap">
     <div class="cat-header">
       <div>
-        <div class="section-label reveal">उत्पादन श्रेणी</div>
-        <h2 class="section-title reveal">सबै किसिमका <em>सामान</em></h2>
+        <div class="section-label reveal">तरकारी वर्गहरू</div>
+        <h2 class="section-title reveal">सबै किसिमका <em>ताजा तरकारी</em></h2>
       </div>
       <a href="#products" class="cat-see-all reveal">सबै हेर्नुस् →</a>
     </div>
-    <div class="cat-grid">
-      <div class="cat-card reveal" onclick="filterProducts('grains'); showToast('🌾 अन्न छनोट भयो')">
-        <div class="cat-card-visual">🌾</div>
-        <div class="cat-card-body">
-          <div class="cat-card-name">अन्न तथा दाल</div>
-          <div class="cat-card-count">24 items</div>
+    <div class="veggie-cat-grid">
+      <div class="veggie-cat-card reveal" onclick="filterProducts('leafy'); showToast('🥬 पातेदार तरकारी')">
+        <div class="veggie-cat-visual">🥬</div>
+        <div class="veggie-cat-body">
+          <div class="veggie-cat-name">पातेदार तरकारी</div>
+          <div class="veggie-cat-count" id="cat-count-leafy">लोड...</div>
         </div>
-        <span class="cat-card-badge">HOT</span>
+        <span class="veggie-cat-badge">FRESH</span>
       </div>
-      <div class="cat-card reveal" onclick="filterProducts('oil'); showToast('🫙 तेल छनोट भयो')">
-        <div class="cat-card-visual">🫙</div>
-        <div class="cat-card-body">
-          <div class="cat-card-name">तेल तथा घी</div>
-          <div class="cat-card-count">12 items</div>
-        </div>
-      </div>
-      <div class="cat-card reveal" onclick="filterProducts('spice'); showToast('🌶 मसला छनोट भयो')">
-        <div class="cat-card-visual">🌶️</div>
-        <div class="cat-card-body">
-          <div class="cat-card-name">मसला तथा नुन</div>
-          <div class="cat-card-count">18 items</div>
+      <div class="veggie-cat-card reveal" onclick="filterProducts('root'); showToast('🥔 जरेदार तरकारी')">
+        <div class="veggie-cat-visual">🥕</div>
+        <div class="veggie-cat-body">
+          <div class="veggie-cat-name">जरेदार तरकारी</div>
+          <div class="veggie-cat-count" id="cat-count-root">लोड...</div>
         </div>
       </div>
-      <div class="cat-card reveal" onclick="filterProducts('veggies'); showToast('🥬 तरकारी छनोट भयो')">
-        <div class="cat-card-visual">🥬</div>
-        <div class="cat-card-body">
-          <div class="cat-card-name">तरकारी</div>
-          <div class="cat-card-count">30 items</div>
+      <div class="veggie-cat-card reveal" onclick="filterProducts('fruit-veg'); showToast('🍅 फलजन्य तरकारी')">
+        <div class="veggie-cat-visual">🍅</div>
+        <div class="veggie-cat-body">
+          <div class="veggie-cat-name">फलजन्य तरकारी</div>
+          <div class="veggie-cat-count" id="cat-count-fruit-veg">लोड...</div>
         </div>
-        <span class="cat-card-badge">NEW</span>
+        <span class="veggie-cat-badge">HOT</span>
       </div>
-      <div class="cat-card reveal" onclick="filterProducts('dairy'); showToast('🥛 डेरी छनोट भयो')">
-        <div class="cat-card-visual">🥛</div>
-        <div class="cat-card-body">
-          <div class="cat-card-name">डेरी उत्पादन</div>
-          <div class="cat-card-count">8 items</div>
+      <div class="veggie-cat-card reveal" onclick="filterProducts('herb'); showToast('🌿 साग/जडीबुटी')">
+        <div class="veggie-cat-visual">🌿</div>
+        <div class="veggie-cat-body">
+          <div class="veggie-cat-name">साग तथा जडीबुटी</div>
+          <div class="veggie-cat-count" id="cat-count-herb">लोड...</div>
+        </div>
+      </div>
+      <div class="veggie-cat-card reveal" onclick="filterProducts('all'); showToast('🥦 सबै तरकारी')">
+        <div class="veggie-cat-visual">🥦</div>
+        <div class="veggie-cat-body">
+          <div class="veggie-cat-name">सबै तरकारी</div>
+          <div class="veggie-cat-count" id="cat-count-all">लोड...</div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     FEATURED PRODUCTS
-══════════════════════════════════════════ -->
-<section class="products-section" id="products" aria-label="Featured Products">
+<!-- ══════════════════ LIVE PRODUCTS — From Billing System ══════════════════ -->
+<section class="products-section" id="products" aria-label="Live Vegetable Products">
   <div class="section-wrap">
     <div class="products-header">
       <div>
-        <div class="section-label reveal">उत्पादनहरू</div>
-        <h2 class="section-title reveal">हाम्रो <em>लोकप्रिय</em> सामानहरू</h2>
+        <div class="section-label reveal">
+          <span class="live-badge"><span class="live-dot"></span> Live — Billing System बाट</span>
+        </div>
+        <h2 class="section-title reveal">आजको <em>ताजा मूल्य सूची</em></h2>
       </div>
-      <a href="gharayesicalculatorbillingsystem.html" class="cat-see-all reveal">App मा सबै हेर्नुस् →</a>
+      <a href="gharayesicalculatorbillingsystem.html" class="cat-see-all reveal">⚖️ Billing App →</a>
     </div>
 
     <div class="product-filter-tabs reveal" role="tablist">
-      <button class="pft active" onclick="filterProducts('all', this)" role="tab" aria-selected="true">सबै</button>
-      <button class="pft" onclick="filterProducts('grains', this)" role="tab">🌾 अन्न</button>
-      <button class="pft" onclick="filterProducts('oil', this)" role="tab">🫙 तेल</button>
-      <button class="pft" onclick="filterProducts('spice', this)" role="tab">🌶 मसला</button>
-      <button class="pft" onclick="filterProducts('veggies', this)" role="tab">🥬 तरकारी</button>
-      <button class="pft" onclick="filterProducts('dairy', this)" role="tab">🥛 डेरी</button>
+      <button class="pft active" onclick="filterProducts('all', this)" role="tab">🥬 सबै</button>
+      <button class="pft" onclick="filterProducts('leafy', this)" role="tab">🥬 पातेदार</button>
+      <button class="pft" onclick="filterProducts('root', this)" role="tab">🥕 जरेदार</button>
+      <button class="pft" onclick="filterProducts('fruit-veg', this)" role="tab">🍅 फलजन्य</button>
+      <button class="pft" onclick="filterProducts('herb', this)" role="tab">🌿 साग</button>
     </div>
 
+    <!-- Product grid — rendered by JS from Firebase -->
     <div class="prod-grid" id="product-grid">
-      <!-- Featured wide -->
-      <div class="prod-card featured reveal" data-cat="grains">
-        <div class="prod-card-img">
-          🌾
-          <span class="prod-discount-badge">-10%</span>
-        </div>
-        <div class="prod-card-body">
-          <div class="prod-category">अन्न</div>
-          <div class="prod-name">बासमती चामल — Premium Quality</div>
-          <div class="prod-rating">
-            <span class="prod-stars">★★★★★</span>
-            <span class="prod-rating-count">(142)</span>
-          </div>
-          <p class="prod-desc">सुगन्धित लामो दाना बासमती चामल — रोज्ना र भोजमा सबैभन्दा उत्तम। किसानबाट सिधा।</p>
-          <div class="prod-price-row">
-            <div class="prod-price">
-              <span class="prod-price-curr">Rs.95</span>
-              <span class="prod-price-old">Rs.105</span>
-              <span class="prod-unit">/ kg</span>
-            </div>
-            <button class="prod-add-btn" onclick="addToCart('बासमती चामल', 95, '🌾', this)" aria-label="Cart मा थप्नुस्">+</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Regular cards -->
-      <div class="prod-card reveal" data-cat="oil">
-        <div class="prod-card-img">
-          🫙
-          <button class="prod-wishlist" onclick="toggleWish(this)" aria-label="Wishlist">🤍</button>
-        </div>
-        <div class="prod-card-body">
-          <div class="prod-category">तेल</div>
-          <div class="prod-name">सरसोको तेल</div>
-          <div class="prod-rating">
-            <span class="prod-stars">★★★★☆</span>
-            <span class="prod-rating-count">(88)</span>
-          </div>
-          <p class="prod-desc">शुद्ध कोल्ड-प्रेस सरसोको तेल — खाना पकाउनका लागि सर्वोत्तम।</p>
-          <div class="prod-price-row">
-            <div class="prod-price">
-              <span class="prod-price-curr">Rs.190</span>
-              <span class="prod-unit">/ L</span>
-            </div>
-            <button class="prod-add-btn" onclick="addToCart('सरसोको तेल', 190, '🫙', this)" aria-label="Cart मा थप्नुस्">+</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="prod-card reveal" data-cat="spice">
-        <div class="prod-card-img">
-          🧂
-          <span class="prod-new-badge">नयाँ</span>
-          <button class="prod-wishlist" onclick="toggleWish(this)" aria-label="Wishlist">🤍</button>
-        </div>
-        <div class="prod-card-body">
-          <div class="prod-category">मसला</div>
-          <div class="prod-name">आयोडाइज्ड नुन</div>
-          <div class="prod-rating">
-            <span class="prod-stars">★★★★★</span>
-            <span class="prod-rating-count">(211)</span>
-          </div>
-          <p class="prod-desc">आयोडाइज्ड नुन — स्वास्थ्यकर र शुद्ध।</p>
-          <div class="prod-price-row">
-            <div class="prod-price">
-              <span class="prod-price-curr">Rs.35</span>
-              <span class="prod-unit">/ kg</span>
-            </div>
-            <button class="prod-add-btn" onclick="addToCart('आयोडाइज्ड नुन', 35, '🧂', this)" aria-label="Cart मा थप्नुस्">+</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="prod-card reveal" data-cat="grains">
-        <div class="prod-card-img">
-          🫘
-          <span class="prod-discount-badge">-5%</span>
-          <button class="prod-wishlist" onclick="toggleWish(this)" aria-label="Wishlist">🤍</button>
-        </div>
-        <div class="prod-card-body">
-          <div class="prod-category">दाल</div>
-          <div class="prod-name">मुसुर दाल</div>
-          <div class="prod-rating">
-            <span class="prod-stars">★★★★☆</span>
-            <span class="prod-rating-count">(67)</span>
-          </div>
-          <p class="prod-desc">तेज पाकने मुसुर दाल — रोजको खाना सजिलो।</p>
-          <div class="prod-price-row">
-            <div class="prod-price">
-              <span class="prod-price-curr">Rs.120</span>
-              <span class="prod-price-old">Rs.126</span>
-              <span class="prod-unit">/ kg</span>
-            </div>
-            <button class="prod-add-btn" onclick="addToCart('मुसुर दाल', 120, '🫘', this)" aria-label="Cart मा थप्नुस्">+</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="prod-card reveal" data-cat="veggies">
-        <div class="prod-card-img">
-          🍅
-          <span class="prod-new-badge">ताजा</span>
-          <button class="prod-wishlist" onclick="toggleWish(this)" aria-label="Wishlist">🤍</button>
-        </div>
-        <div class="prod-card-body">
-          <div class="prod-category">तरकारी</div>
-          <div class="prod-name">टमाटर</div>
-          <div class="prod-rating">
-            <span class="prod-stars">★★★★★</span>
-            <span class="prod-rating-count">(94)</span>
-          </div>
-          <p class="prod-desc">ताजा स्थानीय टमाटर — हरेक दिन बिहान आउने।</p>
-          <div class="prod-price-row">
-            <div class="prod-price">
-              <span class="prod-price-curr">Rs.60</span>
-              <span class="prod-unit">/ kg</span>
-            </div>
-            <button class="prod-add-btn" onclick="addToCart('टमाटर', 60, '🍅', this)" aria-label="Cart मा थप्नुस्">+</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="prod-card reveal" data-cat="dairy">
-        <div class="prod-card-img">
-          🥛
-          <button class="prod-wishlist" onclick="toggleWish(this)" aria-label="Wishlist">🤍</button>
-        </div>
-        <div class="prod-card-body">
-          <div class="prod-category">डेरी</div>
-          <div class="prod-name">गाईको दूध</div>
-          <div class="prod-rating">
-            <span class="prod-stars">★★★★★</span>
-            <span class="prod-rating-count">(156)</span>
-          </div>
-          <p class="prod-desc">ताजा पाश्चुरीकृत गाईको दूध — हरेक बिहान।</p>
-          <div class="prod-price-row">
-            <div class="prod-price">
-              <span class="prod-price-curr">Rs.90</span>
-              <span class="prod-unit">/ L</span>
-            </div>
-            <button class="prod-add-btn" onclick="addToCart('गाईको दूध', 90, '🥛', this)" aria-label="Cart मा थप्नुस्">+</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="prod-card reveal" data-cat="spice">
-        <div class="prod-card-img">
-          🌶️
-          <button class="prod-wishlist" onclick="toggleWish(this)" aria-label="Wishlist">🤍</button>
-        </div>
-        <div class="prod-card-body">
-          <div class="prod-category">मसला</div>
-          <div class="prod-name">खुर्सानी धुलो</div>
-          <div class="prod-rating">
-            <span class="prod-stars">★★★★☆</span>
-            <span class="prod-rating-count">(43)</span>
-          </div>
-          <p class="prod-desc">तीखो र सुगन्धित देशी खुर्सानी — खानालाई स्वाद।</p>
-          <div class="prod-price-row">
-            <div class="prod-price">
-              <span class="prod-price-curr">Rs.250</span>
-              <span class="prod-unit">/ kg</span>
-            </div>
-            <button class="prod-add-btn" onclick="addToCart('खुर्सानी धुलो', 250, '🌶️', this)" aria-label="Cart मा थप्नुस्">+</button>
-          </div>
-        </div>
-      </div>
+      <!-- Skeleton loaders -->
+      <div class="prod-skeleton"><div class="skel-img"></div><div class="skel-body"><div class="skel-line"></div><div class="skel-line short"></div></div></div>
+      <div class="prod-skeleton"><div class="skel-img"></div><div class="skel-body"><div class="skel-line"></div><div class="skel-line short"></div></div></div>
+      <div class="prod-skeleton"><div class="skel-img"></div><div class="skel-body"><div class="skel-line"></div><div class="skel-line short"></div></div></div>
+      <div class="prod-skeleton"><div class="skel-img"></div><div class="skel-body"><div class="skel-line"></div><div class="skel-line short"></div></div></div>
     </div>
 
     <div style="text-align:center;margin-top:48px;" class="reveal">
-      <a href="gharayesicalculatorbillingsystem.html" class="btn-primary">
-        🌿 App मा सबै उत्पादन हेर्नुस्
-      </a>
+      <a href="gharayesicalculatorbillingsystem.html" class="btn-primary">⚖️ Billing App मा सबै हेर्नुस्</a>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     HOW IT WORKS
-══════════════════════════════════════════ -->
+<!-- ══════════════════ HOW IT WORKS ══════════════════ -->
 <section class="how-section" id="how-it-works" aria-label="How It Works">
   <div class="section-wrap">
     <div class="how-grid">
       <div>
         <div class="section-label reveal">कसरी काम गर्छ</div>
-        <h2 class="section-title reveal">३ सजिलो <em>चरण</em> मा<br/>तपाईंको दोकान Digital</h2>
-        <p class="section-sub reveal">Internet होस् वा नहोस् — घरायेसी जहिले पनि काम गर्छ। दोकानदारको सबैभन्दा ठूलो झन्झट — हिसाब — हामीले सम्हाल्छौं।</p>
-
+        <h2 class="section-title reveal">३ सजिलो <em>चरण</em> मा<br/>ताजा तरकारी घरमा</h2>
+        <p class="section-sub reveal">WhatsApp मा Order गर्नुस् — हाम्रो Billing System ले हिसाब गर्छ, तपाईंले सही बिल पाउनुहुन्छ।</p>
         <div class="how-steps">
           <div class="how-step reveal">
             <div class="how-step-num">01</div>
             <div class="how-step-body">
-              <div class="how-step-title">🛒 उत्पादन छान्नुस्</div>
-              <div class="how-step-desc">App मा आफ्नो दोकानका सामानहरू थप्नुस् — नाम, मूल्य, फोटो। एकपटक थपेपछि बिल बनाउन सेकेन्ड मात्र लाग्छ।</div>
+              <div class="how-step-title">🥬 तरकारी रोज्नुस्</div>
+              <div class="how-step-desc">यो Website बाट आजको ताजा सूची हेर्नुस् — मूल्य Billing System बाट Live आउँछ।</div>
             </div>
           </div>
           <div class="how-step reveal">
             <div class="how-step-num">02</div>
             <div class="how-step-body">
-              <div class="how-step-title">⚖️ तौल र मूल्य हिसाब गर्नुस्</div>
-              <div class="how-step-desc">तौल वा मात्रा हाल्नुस् — App ले तुरुन्त मूल्य निकाल्छ। छुट (Discount) थप्न सक्नुहुन्छ, Payment हिसाब गर्न सक्नुहुन्छ।</div>
+              <div class="how-step-title">📲 WhatsApp मा Order गर्नुस्</div>
+              <div class="how-step-desc">Cart मा थप्नुस् वा सिधै WhatsApp मा सम्पर्क गर्नुस् — नाम, ठेगाना र Order लेख्नुस्।</div>
             </div>
           </div>
           <div class="how-step reveal">
             <div class="how-step-num">03</div>
             <div class="how-step-body">
-              <div class="how-step-title">📲 बिल पठाउनुस् — WhatsApp मा</div>
-              <div class="how-step-desc">ग्राहकको WhatsApp मा सुन्दर बिल पठाउनुस् वा PDF बनाउनुस् — Print गर्नुस् — Cloud मा Save गर्नुस्। सबै एकै App मा।</div>
+              <div class="how-step-title">⚖️ सही बिल पाउनुस्</div>
+              <div class="how-step-desc">Billing System ले तौल र मूल्य Calculate गरी WhatsApp मा सुन्दर बिल पठाउँछ। गल्ती शून्य!</div>
             </div>
           </div>
           <div class="how-step reveal">
             <div class="how-step-num">04</div>
             <div class="how-step-body">
-              <div class="how-step-title">📊 बिक्री रिपोर्ट हेर्नुस्</div>
-              <div class="how-step-desc">आज, हिजो, यो हप्ताको कुल बिक्री — कुन सामान कति बिक्यो — सबै Dashboard मा देखिन्छ।</div>
+              <div class="how-step-title">🏠 घरमै पाउनुस्</div>
+              <div class="how-step-desc">सरस्वतीखेल क्षेत्रमा मात्र Rs.25 मा घरमै डेलिभरी — ताजा र सुरक्षित।</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Device Mockup -->
       <div class="how-visual reveal">
         <div class="how-badge-float">
-          ⚡ Offline Mode<br/>
-          <span style="font-size:.7rem;opacity:.8">Internet नभए पनि काम गर्छ</span>
+          ⚖️ Live Billing<br/>
+          <span style="font-size:.7rem;opacity:.8">Billing App बाट नियन्त्रित</span>
         </div>
         <div class="how-device">
           <div class="how-device-bar">
-            <div class="hdb-dots">
-              <div class="hdb-dot"></div>
-              <div class="hdb-dot"></div>
-              <div class="hdb-dot"></div>
-            </div>
-            <div class="hdb-title">घरायेसी · Dashboard</div>
+            <div class="hdb-dots"><div class="hdb-dot"></div><div class="hdb-dot"></div><div class="hdb-dot"></div></div>
+            <div class="hdb-title">घरायेसी · Live मूल्य</div>
             <div style="font-size:.65rem;color:rgba(255,255,255,.25);font-family:var(--mono);">आज</div>
           </div>
           <div class="how-device-body">
             <div class="hd-metric-row">
-              <div class="hd-metric">
-                <div class="hd-metric-val">47</div>
-                <div class="hd-metric-key">बिल</div>
-              </div>
-              <div class="hd-metric">
-                <div class="hd-metric-val">12k</div>
-                <div class="hd-metric-key">आम्दानी</div>
-              </div>
-              <div class="hd-metric">
-                <div class="hd-metric-val">32</div>
-                <div class="hd-metric-key">Items</div>
-              </div>
+              <div class="hd-metric"><div class="hd-metric-val" id="dev-prod-count">—</div><div class="hd-metric-key">उत्पादन</div></div>
+              <div class="hd-metric"><div class="hd-metric-val">रोज</div><div class="hd-metric-key">ताजा</div></div>
+              <div class="hd-metric"><div class="hd-metric-val">Live</div><div class="hd-metric-key">मूल्य</div></div>
             </div>
-            <div class="hd-bill-preview">
-              <div style="font-size:.6rem;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:10px;text-transform:uppercase;">अन्तिम बिल</div>
-              <div class="hd-bill-row">
-                <div class="hd-bill-item">🌾 बासमती चामल 5kg</div>
-                <div class="hd-bill-val">Rs.475</div>
-              </div>
-              <div class="hd-bill-row">
-                <div class="hd-bill-item">🫙 सरसोको तेल 1L</div>
-                <div class="hd-bill-val">Rs.190</div>
-              </div>
-              <div class="hd-bill-row">
-                <div class="hd-bill-item">🧂 नुन 2kg</div>
-                <div class="hd-bill-val">Rs.70</div>
-              </div>
-              <div class="hd-bill-total-row">
-                <div class="hd-bill-total-label">💰 जम्मा</div>
-                <div class="hd-bill-total-val">Rs.735</div>
-              </div>
+            <div class="hd-bill-preview" id="dev-bill-preview">
+              <div style="font-size:.6rem;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:10px;text-transform:uppercase;">आजको सूची</div>
+              <div class="hd-bill-row"><div class="hd-bill-item">लोड हुँदैछ...</div><div class="hd-bill-val">—</div></div>
             </div>
           </div>
         </div>
@@ -2234,123 +1167,108 @@ footer {
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     OFFLINE SHOP SHOWCASE
-══════════════════════════════════════════ -->
-<section class="inperson-section" id="inperson" aria-label="Offline Shop Features">
-  <div class="inperson-bg-pattern" aria-hidden="true"></div>
+<!-- ══════════════════ BILLING SYSTEM SHOWCASE ══════════════════ -->
+<section class="billing-section" id="billing" aria-label="Billing System Features">
+  <div class="billing-bg-pattern" aria-hidden="true"></div>
   <div class="section-wrap">
-    <div class="inperson-grid">
+    <div class="billing-grid">
       <div>
-        <div class="section-label reveal" style="color:var(--jade3)">Offline पनि, Online पनि</div>
-        <h2 class="section-title reveal">Internet नभए पनि<br/><span style="color:var(--jade3);">दोकान चल्छ</span></h2>
-        <p class="section-sub reveal">Load-shedding होस्, Wi-Fi नहोस् — घरायेसी सँधै काम गर्छ। तपाईंको बिल, तपाईंको हातमा।</p>
-
-        <div class="inperson-features">
-          <div class="inperson-feat reveal">
-            <div class="inperson-feat-icon">⚡</div>
+        <div class="section-label reveal" style="color:var(--jade3)">Billing System</div>
+        <h2 class="section-title reveal">यो Website<br/><span style="color:var(--jade3);">Billing App बाट चल्छ</span></h2>
+        <p class="section-sub reveal">मूल्य, उत्पादन सूची, पसलको नाम — सबै Billing App ले नियन्त्रण गर्छ। दोकानदारले App मा बदल्यो भने Website मा तुरुन्त देखिन्छ।</p>
+        <div class="billing-features">
+          <div class="billing-feat reveal">
+            <div class="billing-feat-icon">🔄</div>
             <div>
-              <div class="inperson-feat-title">100% Offline काम गर्छ</div>
-              <div class="inperson-feat-desc">Internet नभए पनि App पूरै काम गर्छ। Internet आएपछि Cloud मा Sync हुन्छ।</div>
+              <div class="billing-feat-title">Live Sync — Firebase बाट</div>
+              <div class="billing-feat-desc">Billing App मा उत्पादन थपे, मूल्य बदले — यो Website मा Real-time अपडेट हुन्छ।</div>
             </div>
           </div>
-          <div class="inperson-feat reveal">
-            <div class="inperson-feat-icon">📲</div>
+          <div class="billing-feat reveal">
+            <div class="billing-feat-icon">⚖️</div>
             <div>
-              <div class="inperson-feat-title">WhatsApp मा बिल पठाउनुस्</div>
-              <div class="inperson-feat-desc">एक Click मा ग्राहकको WhatsApp मा सुन्दर बिल — Professional अनुभव।</div>
+              <div class="billing-feat-title">सही तौल Calculator</div>
+              <div class="billing-feat-desc">kg, g, माना, पाथी — Billing App ले सबै एकाइमा मूल्य Calculate गर्छ।</div>
             </div>
           </div>
-          <div class="inperson-feat reveal">
-            <div class="inperson-feat-icon">💵</div>
+          <div class="billing-feat reveal">
+            <div class="billing-feat-icon">📲</div>
             <div>
-              <div class="inperson-feat-title">Payment हिसाब — छुट सहित</div>
-              <div class="inperson-feat-desc">ग्राहकले दिएको पैसा र फिर्ता रकम — अब गल्ती हुँदैन।</div>
+              <div class="billing-feat-title">WhatsApp Invoice</div>
+              <div class="billing-feat-desc">ग्राहकको WhatsApp मा सुन्दर बिल — PDF, Print वा सिधै Share गर्नुस्।</div>
             </div>
           </div>
-          <div class="inperson-feat reveal">
-            <div class="inperson-feat-icon">🔒</div>
+          <div class="billing-feat reveal">
+            <div class="billing-feat-icon">🔒</div>
             <div>
-              <div class="inperson-feat-title">Admin PIN सुरक्षा</div>
-              <div class="inperson-feat-desc">Setting र Price बदल्न Admin PIN चाहिन्छ — कर्मचारीबाट सुरक्षित।</div>
+              <div class="billing-feat-title">Admin PIN सुरक्षा</div>
+              <div class="billing-feat-desc">मूल्य बदल्न Admin PIN चाहिन्छ — Website र App दुवै सुरक्षित।</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="inperson-visual">
-        <div class="ip-card tall reveal">
-          <div class="ip-card-icon">🏪</div>
-          <div class="ip-card-title">आफ्नो दोकानको नाम</div>
-          <div class="ip-card-desc">Logo, नाम, ठेगाना सहित Professional बिल — ग्राहकले सम्झन्छन्।</div>
-          <div class="ip-card-num">5k+</div>
-          <div class="ip-card-numsub">सक्रिय दोकान</div>
+      <div class="billing-visual">
+        <div class="bp-card tall reveal">
+          <div class="bp-card-icon">⚖️</div>
+          <div class="bp-card-title">Billing App</div>
+          <div class="bp-card-desc">Website र पसल दुवै यसैले चलाउँछ। एक App — दुई काम।</div>
+          <div class="bp-card-num" id="billing-prod-count">—</div>
+          <div class="bp-card-numsub">Live उत्पादन</div>
         </div>
-        <div class="ip-card reveal">
-          <div class="ip-card-icon">⚖️</div>
-          <div class="ip-card-title">तौल Calculator</div>
-          <div class="ip-card-desc">kg, g, L — सबै एकाइ</div>
+        <div class="bp-card reveal">
+          <div class="bp-card-icon">🔄</div>
+          <div class="bp-card-title">Auto Sync</div>
+          <div class="bp-card-desc">Firebase Real-time DB</div>
         </div>
-        <div class="ip-card reveal">
-          <div class="ip-card-icon">📊</div>
-          <div class="ip-card-title">बिक्री Report</div>
-          <div class="ip-card-desc">दैनिक आम्दानी एकैनजर</div>
+        <div class="bp-card reveal">
+          <div class="bp-card-icon">📊</div>
+          <div class="bp-card-title">Sales Report</div>
+          <div class="bp-card-desc">दैनिक आम्दानी एकैनजर</div>
         </div>
-        <div class="ip-card reveal">
-          <div class="ip-card-icon">☁️</div>
-          <div class="ip-card-title">Cloud Backup</div>
-          <div class="ip-card-desc">डाटा कहिल्यै हराउँदैन</div>
+        <div class="bp-card reveal">
+          <div class="bp-card-icon">☁️</div>
+          <div class="bp-card-title">Cloud Backup</div>
+          <div class="bp-card-desc">डाटा कहिल्यै हराउँदैन</div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     TESTIMONIALS
-══════════════════════════════════════════ -->
+<!-- ══════════════════ TESTIMONIALS ══════════════════ -->
 <section class="testimonials" id="testimonials" aria-label="Customer Testimonials">
   <div class="section-wrap">
     <div class="testi-header">
       <div class="section-label reveal">ग्राहकका कुरा</div>
       <h2 class="section-title reveal">उनीहरूले <em>के भन्छन्</em></h2>
-      <p class="section-sub reveal" style="margin:0 auto;text-align:center;">नेपालका ५,०००+ दोकानदारले घरायेसीलाई विश्वास गरेका छन्।</p>
+      <p class="section-sub reveal" style="margin:0 auto;text-align:center;">सरस्वतीखेलका छिमेकीहरूको अनुभव।</p>
     </div>
-
     <div class="testi-grid">
       <div class="testi-card reveal">
         <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"पहिले कापीमा लेख्थेँ, गल्ती हुन्थ्यो। अहिले घरायेसीले सब सम्हाल्छ — बिल पनि सुन्दर आउँछ। ग्राहकहरू हाम्रो दोकानलाई professional ठान्छन्!"</p>
-        <div class="testi-author">
-          <div class="testi-avatar">🧑‍🌾</div>
-          <div>
-            <div class="testi-name">सीता देवी महर्जन</div>
-            <div class="testi-loc">किराना दोकान, भक्तपुर</div>
-          </div>
-          <div class="testi-verified">✓ Verified</div>
-        </div>
-      </div>
-      <div class="testi-card reveal">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"WhatsApp मा बिल पठाउन पाउँदा ग्राहकहरू छक्क पर्छन्! मेरो दोकान professional देखिन थाल्यो। Sales पनि बढेको छ।"</p>
-        <div class="testi-author">
-          <div class="testi-avatar">👨‍💼</div>
-          <div>
-            <div class="testi-name">बिनोद गुरुङ</div>
-            <div class="testi-loc">किराना, पोखरा</div>
-          </div>
-          <div class="testi-verified">✓ Verified</div>
-        </div>
-      </div>
-      <div class="testi-card reveal">
-        <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Internet नभए पनि काम गर्छ — यो कुरा मलाई सबभन्दा मनपर्यो। बिजुली गएपछि पनि बिल बन्छ! Rs.299 महिनाको — एकदमै सस्तो!"</p>
+        <p class="testi-text">"हरेक दिन ताजा तरकारी आउँछ। WhatsApp मा Order गर्दा बिल पनि आउँछ — एकदमै सुविधाजनक! मूल्य पनि बजार भन्दा उचित छ।"</p>
         <div class="testi-author">
           <div class="testi-avatar">👩‍🍳</div>
-          <div>
-            <div class="testi-name">कमला थापा</div>
-            <div class="testi-loc">किराना, धरान</div>
-          </div>
+          <div><div class="testi-name">सुनिता श्रेष्ठ</div><div class="testi-loc">सरस्वतीखेल, भक्तपुर</div></div>
+          <div class="testi-verified">✓ Verified</div>
+        </div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Billing System को बिल देखेर छक्क परेँ! तौल, मूल्य सबै सफा देखिन्छ। किसानबाट सिधै आउँछ भन्ने थाहा भयो — विश्वास बढ्यो।"</p>
+        <div class="testi-author">
+          <div class="testi-avatar">🧑‍🌾</div>
+          <div><div class="testi-name">रमेश तामाङ</div><div class="testi-loc">सरस्वतीखेल, भक्तपुर</div></div>
+          <div class="testi-verified">✓ Verified</div>
+        </div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Website मा मूल्य हेरेर Order गर्न पाउँदा धेरै सजिलो भयो। Rs.25 मा घरमै डेलिभरी — यो त सपना जस्तो! दिदी एकदमै मिलनसार।"</p>
+        <div class="testi-author">
+          <div class="testi-avatar">👨‍💼</div>
+          <div><div class="testi-name">बिकास महर्जन</div><div class="testi-loc">सरस्वतीखेल, भक्तपुर</div></div>
           <div class="testi-verified">✓ Verified</div>
         </div>
       </div>
@@ -2358,136 +1276,45 @@ footer {
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     PRICING
-══════════════════════════════════════════ -->
-<section class="pricing-section" id="pricing" aria-label="Pricing Plans">
+<!-- ══════════════════ SHOP CTA ══════════════════ -->
+<section class="shop-cta-section" id="download" aria-label="Open Billing App">
   <div class="section-wrap">
-    <div class="pricing-header">
-      <div class="section-label reveal">मूल्य सूची</div>
-      <h2 class="section-title reveal">सबैको <em style="color:var(--jade3)">बजेटमा</em> मिल्छ</h2>
-      <p class="section-sub reveal">महँगो होइन, तर काम भने ठूलो। आफ्नो दोकानको साइज अनुसार छान्नुस्।</p>
-    </div>
-
-    <div class="price-grid">
-      <!-- Free -->
-      <div class="price-card reveal">
-        <div class="price-plan-name">साधारण</div>
-        <div class="price-amount">
-          <span class="price-currency">Rs.</span>
-          <span class="price-val">0</span>
-        </div>
-        <div class="price-period">सधैँका लागि निःशुल्क</div>
-        <div class="price-divider"></div>
-        <ul class="price-features">
-          <li>५ वटा उत्पादन</li>
-          <li>बिल बनाउने</li>
-          <li>WhatsApp share</li>
-          <li>बिल इतिहास (३० दिन)</li>
-        </ul>
-        <a href="gharayesicalculatorbillingsystem.html" class="price-btn price-btn-outline">सुरु गर्नुस् →</a>
-      </div>
-
-      <!-- Pro — Featured -->
-      <div class="price-card featured reveal">
-        <div class="price-featured-badge">🌿 सबैभन्दा लोकप्रिय</div>
-        <div class="price-plan-name">व्यापारी</div>
-        <div class="price-amount">
-          <span class="price-currency">Rs.</span>
-          <span class="price-val">299</span>
-        </div>
-        <div class="price-period">प्रति महिना</div>
-        <div class="price-divider" style="background:rgba(255,255,255,.2)"></div>
-        <ul class="price-features">
-          <li>असीमित उत्पादन</li>
-          <li>Cloud sync & backup</li>
-          <li>PIN सुरक्षा</li>
-          <li>पूरा बिल इतिहास</li>
-          <li>PDF download</li>
-          <li>Priority support</li>
-        </ul>
-        <a href="gharayesicalculatorbillingsystem.html" class="price-btn price-btn-fill">अहिले किन्नुस् →</a>
-      </div>
-
-      <!-- Enterprise -->
-      <div class="price-card reveal">
-        <div class="price-plan-name">व्यावसायिक</div>
-        <div class="price-amount">
-          <span class="price-currency">Rs.</span>
-          <span class="price-val">699</span>
-        </div>
-        <div class="price-period">प्रति महिना</div>
-        <div class="price-divider"></div>
-        <ul class="price-features">
-          <li>व्यापारी Plan सबै</li>
-          <li>Multi-device</li>
-          <li>Staff accounts</li>
-          <li>Custom Invoice</li>
-          <li>Analytics Dashboard</li>
-          <li>Dedicated support</li>
-        </ul>
-        <a href="gharayesicalculatorbillingsystem.html" class="price-btn price-btn-ghost">सम्पर्क गर्नुस् →</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════════
-     APP CTA / QR DOWNLOAD
-══════════════════════════════════════════ -->
-<section class="app-cta-section" id="download" aria-label="Download App">
-  <div class="section-wrap">
-    <div class="app-cta-inner reveal">
-      <div class="app-cta-content">
-        <div class="section-label" style="color:var(--jade3)">आजै सुरु गर्नुस्</div>
-        <h2 class="app-cta-title">
-          तपाईंको दोकान,<br/>
-          अब <span>अझ राम्रो</span>
+    <div class="shop-cta-inner reveal">
+      <div class="shop-cta-content">
+        <div class="section-label" style="color:var(--jade3)">Billing System</div>
+        <h2 class="shop-cta-title">
+          दोकानदारका लागि,<br/>
+          <span>Billing App आजै खोल्नुस्</span>
         </h2>
-        <p class="app-cta-sub">हजारौं दोकानदारले पहिले नै विश्वास गरिसकेका छन्। निःशुल्क App डाउनलोड गर्नुस् र आजैबाट बिल बनाउन सुरु गर्नुस्।</p>
-        <div class="app-cta-stats">
-          <div>
-            <div class="app-cta-stat-num">5,000+</div>
-            <div class="app-cta-stat-label">सक्रिय दोकान</div>
-          </div>
-          <div>
-            <div class="app-cta-stat-num">2 लाख+</div>
-            <div class="app-cta-stat-label">बिल बनेका</div>
-          </div>
-          <div>
-            <div class="app-cta-stat-num">4.9 ★</div>
-            <div class="app-cta-stat-label">Rating</div>
-          </div>
+        <p class="shop-cta-sub">यो Website को उत्पादन सूची र मूल्य Billing App बाट नियन्त्रण हुन्छ। App मा उत्पादन थप्नुस् — Website मा Live देखिन्छ।</p>
+        <div class="shop-cta-stats">
+          <div><div class="shop-cta-stat-num" id="cta-prod-count">—</div><div class="shop-cta-stat-label">Live उत्पादन</div></div>
+          <div><div class="shop-cta-stat-num">Real-time</div><div class="shop-cta-stat-label">Firebase Sync</div></div>
+          <div><div class="shop-cta-stat-num">4.9 ★</div><div class="shop-cta-stat-label">Local Rating</div></div>
         </div>
         <div style="margin-top:36px;display:flex;gap:14px;flex-wrap:wrap;">
-          <a href="gharayesicalculatorbillingsystem.html" class="btn-primary">🌿 App खोल्नुस् — निःशुल्क</a>
-          <a href="https://wa.me/977XXXXXXXXX" class="btn-secondary" target="_blank" rel="noopener">📲 WhatsApp Support</a>
+          <a href="gharayesicalculatorbillingsystem.html" class="btn-primary">⚖️ Billing App खोल्नुस्</a>
+          <a href="https://wa.me/9779709612863?text=Order%3A%20Name%3A%20Number%3A%20Address%3A" target="_blank" rel="noopener" class="btn-secondary">📲 WhatsApp Order</a>
         </div>
       </div>
-
-      <div class="app-cta-qr">
-        <div class="qr-code-svg" aria-hidden="true">📱</div>
-        <div class="qr-label">QR SCAN गर्नुस्</div>
-        <div class="qr-sub">Phone बाट Camera खोल्नुस्<br/>र यो QR Scan गर्नुस्</div>
-        <div class="qr-store-badges">
-          <a href="#" class="qr-store-badge"><span>▶</span> Google Play</a>
-          <a href="#" class="qr-store-badge"><span>🍎</span> App Store</a>
-          <a href="gharayesicalculatorbillingsystem.html" class="qr-store-badge"><span>🌐</span> Web App</a>
-        </div>
+      <div class="shop-cta-right">
+        <div class="billing-app-icon">⚖️</div>
+        <div class="billing-app-label">BILLING APP</div>
+        <div class="billing-app-sub">यो Website लाई<br/>Billing App ले नियन्त्रण गर्छ</div>
+        <a href="gharayesicalculatorbillingsystem.html" class="billing-launch-btn">⚖️ अहिले खोल्नुस् →</a>
+        <a href="https://wa.me/9779709612863" target="_blank" rel="noopener" style="display:block;width:100%;background:rgba(37,211,102,.15);color:#25d366;border:1.5px solid rgba(37,211,102,.3);padding:11px;border-radius:12px;font-size:.82rem;font-weight:800;text-align:center;text-decoration:none;transition:background .2s;">📲 WhatsApp मा सम्पर्क</a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     NEWSLETTER / WHATSAPP
-══════════════════════════════════════════ -->
+<!-- NEWSLETTER -->
 <section class="newsletter-section" aria-label="Stay Connected">
   <div class="section-wrap">
     <div class="newsletter-inner">
       <div class="reveal">
-        <h2 class="newsletter-title">अफर र Updates<br/>सिधा तपाईंकहाँ!</h2>
-        <p class="newsletter-sub">नयाँ Feature, विशेष छुट र Tips — Email वा WhatsApp मा पाउनुस्।</p>
+        <h2 class="newsletter-title">ताजा मूल्य र Updates<br/>सिधै तपाईंकहाँ!</h2>
+        <p class="newsletter-sub">नयाँ तरकारी, विशेष छुट र मौसमी अफर — Email वा WhatsApp मा पाउनुस्।</p>
       </div>
       <div class="reveal">
         <div class="newsletter-form">
@@ -2495,7 +1322,7 @@ footer {
             <input type="email" class="newsletter-input" placeholder="तपाईंको Email ठेगाना" aria-label="Email address"/>
             <button class="newsletter-btn" onclick="subscribeNewsletter()">Subscribe →</button>
           </div>
-          <a href="https://wa.me/977XXXXXXXXX?text=घरायेसी+Updates+चाहियो" target="_blank" rel="noopener" class="whatsapp-btn">
+          <a href="https://wa.me/9779709612863?text=घरायेसी+Updates+चाहियो" target="_blank" rel="noopener" class="whatsapp-btn">
             📲 WhatsApp मा Join गर्नुस्
           </a>
           <div class="newsletter-note">🔒 तपाईंको Email सुरक्षित छ — हामी Spam पठाउँदैनौं।</div>
@@ -2505,78 +1332,73 @@ footer {
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     FOOTER
-══════════════════════════════════════════ -->
+<!-- FOOTER -->
 <footer aria-label="Site Footer">
   <div class="footer-main">
     <div class="footer-brand">
       <a href="#" class="footer-logo">
-        <div class="footer-logo-box">🌿</div>
-        <span class="footer-logo-name">घरायेसी</span>
+        <div class="footer-logo-box" id="footer-logo-box"><span id="footer-logo-inner">🥬</span></div>
+        <span class="footer-logo-name" id="footer-shop-name">घरायेसी</span>
       </a>
-      <p class="footer-tagline">नेपाली दोकानदारका लागि, नेपालमै बनेको — हिसाब सफा, व्यवहार मीठो।</p>
+      <p class="footer-tagline" id="footer-tagline">सरस्वतीखेलको मुटुमा — हरेक दिन ताजा तरकारी, उचित मूल्य र घरमै डेलिभरी।</p>
       <div class="footer-socials">
-        <a href="#" class="footer-social-btn" aria-label="Facebook">f</a>
-        <a href="#" class="footer-social-btn" aria-label="WhatsApp">📲</a>
-        <a href="#" class="footer-social-btn" aria-label="YouTube">▶</a>
-        <a href="#" class="footer-social-btn" aria-label="TikTok">♪</a>
+        <a href="https://www.facebook.com/GharayesiSewa" target="_blank" rel="noopener" class="footer-social-btn" aria-label="Facebook">f</a>
+        <a href="https://wa.me/9779709612863" target="_blank" rel="noopener" class="footer-social-btn" aria-label="WhatsApp">📲</a>
+        <a href="https://maps.app.goo.gl/KnAvfQ67dY2ooY4f7" target="_blank" rel="noopener" class="footer-social-btn" aria-label="Map">📍</a>
       </div>
     </div>
 
     <div>
-      <div class="footer-col-title">Company</div>
+      <div class="footer-col-title">तरकारी</div>
       <ul class="footer-links">
-        <li><a href="#">हाम्रो बारेमा</a></li>
-        <li><a href="#">Blog</a></li>
-        <li><a href="#">Press</a></li>
-        <li><a href="#">Careers</a></li>
+        <li><a href="#products">🥬 पातेदार तरकारी</a></li>
+        <li><a href="#products">🥕 जरेदार तरकारी</a></li>
+        <li><a href="#products">🍅 फलजन्य तरकारी</a></li>
+        <li><a href="#products">🌿 साग तथा जडीबुटी</a></li>
       </ul>
     </div>
 
     <div>
-      <div class="footer-col-title">App</div>
+      <div class="footer-col-title">Billing App</div>
       <ul class="footer-links">
-        <li><a href="gharayesicalculatorbillingsystem.html">Web App</a></li>
-        <li><a href="#">Features</a></li>
-        <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#">Changelog</a></li>
+        <li><a href="gharayesicalculatorbillingsystem.html">⚖️ Billing खोल्नुस्</a></li>
+        <li><a href="gharayesicalculatorbillingsystem.html">📊 Sales Report</a></li>
+        <li><a href="gharayesicalculatorbillingsystem.html">📦 उत्पादन थप्नुस्</a></li>
+        <li><a href="gharayesicalculatorbillingsystem.html">🔒 Admin Panel</a></li>
       </ul>
     </div>
 
     <div>
-      <div class="footer-col-title">Support</div>
+      <div class="footer-col-title">सम्पर्क</div>
       <ul class="footer-links">
-        <li><a href="#">Help Center</a></li>
-        <li><a href="https://wa.me/977XXXXXXXXX" target="_blank" rel="noopener">📲 WhatsApp</a></li>
-        <li><a href="#">Privacy Policy</a></li>
-        <li><a href="#">Terms of Service</a></li>
+        <li><a href="https://wa.me/9779709612863" target="_blank" rel="noopener">📲 WhatsApp</a></li>
+        <li><a href="https://maps.app.goo.gl/KnAvfQ67dY2ooY4f7" target="_blank" rel="noopener">📍 हाम्रो स्थान</a></li>
+        <li><a href="https://www.facebook.com/GharayesiSewa" target="_blank" rel="noopener">f Facebook</a></li>
       </ul>
     </div>
 
     <div>
-      <div class="footer-col-title">Downloads</div>
+      <div class="footer-col-title">समय</div>
       <ul class="footer-links">
-        <li><a href="#">▶ Google Play</a></li>
-        <li><a href="#">🍎 App Store</a></li>
-        <li><a href="gharayesicalculatorbillingsystem.html">🌐 Web App</a></li>
+        <li><a href="#">📅 आइत–शुक्र: ८–८</a></li>
+        <li><a href="#">📅 शनिबार: ८–८</a></li>
+        <li><a href="#">🛵 डेलिभरी: Rs.25</a></li>
+        <li><a href="#">📍 सरस्वतीखेल</a></li>
       </ul>
     </div>
   </div>
 
   <div class="footer-bottom">
-    <div class="footer-copy">© 2025 घरायेसी — Made with <span>♥</span> in Kathmandu, Nepal <span class="flag">🇳🇵</span></div>
+    <div class="footer-copy">© 2082/2025 घरायेसी — Made with <span>♥</span> in Saraswotikhel, Bhaktapur 🇳🇵</div>
     <div class="footer-badges">
-      <div class="footer-badge">🔒 SSL Secure</div>
-      <div class="footer-badge">⚡ Offline First</div>
+      <div class="footer-badge">🥬 Daily Fresh</div>
+      <div class="footer-badge">⚖️ Billing Powered</div>
       <div class="footer-badge">🌿 Made in Nepal</div>
     </div>
   </div>
 </footer>
 
-<!-- ══════════════════════════════════════════
-     MINI CART SIDEBAR
-══════════════════════════════════════════ -->
+<!-- MINI CART SIDEBAR -->
 <div class="cart-overlay" id="cart-overlay" role="dialog" aria-modal="true" aria-label="Shopping Cart">
   <div class="cart-sidebar" id="cart-sidebar">
     <div class="cart-header">
@@ -2585,8 +1407,8 @@ footer {
     </div>
     <div id="cart-body">
       <div class="cart-empty" id="cart-empty-state">
-        <div class="cart-empty-icon">🛒</div>
-        <div class="cart-empty-text">Cart खाली छ।<br/>माथिका उत्पादनहरूबाट थप्नुस्!</div>
+        <div class="cart-empty-icon">🥬</div>
+        <div class="cart-empty-text">Cart खाली छ।<br/>माथिका ताजा तरकारीहरूबाट थप्नुस्!</div>
       </div>
       <div class="cart-items" id="cart-items-list" style="display:none"></div>
     </div>
@@ -2596,38 +1418,32 @@ footer {
         <span class="cart-subtotal-val" id="cart-subtotal-val">Rs.0</span>
       </div>
       <div class="cart-subtotal" style="margin-top:6px">
-        <span class="cart-subtotal-label" style="font-size:.75rem;color:var(--g3)">Tax / Delivery</span>
-        <span class="cart-subtotal-val" style="font-size:.82rem;color:var(--g3)">—</span>
+        <span class="cart-subtotal-label" style="font-size:.75rem;color:var(--g3)">डेलिभरी शुल्क</span>
+        <span class="cart-subtotal-val" style="font-size:.82rem;color:var(--g3)">Rs.25</span>
       </div>
-      <button class="cart-checkout-btn" onclick="openAppWithCart()">
-        🌿 App मा Checkout गर्नुस् →
+      <button class="cart-checkout-btn" onclick="openWhatsAppOrder()">
+        📲 WhatsApp मा Order गर्नुस् →
       </button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     SEARCH MODAL
-══════════════════════════════════════════ -->
+<!-- SEARCH MODAL -->
 <div class="search-overlay" id="search-overlay" role="dialog" aria-modal="true" aria-label="Search">
   <div class="search-box">
     <div class="search-input-wrap">
       <span class="search-icon">🔍</span>
-      <input type="search" class="search-input" id="search-input" placeholder="सामान खोज्नुस् — चामल, तेल, दाल..." autocomplete="off" aria-label="Search products"/>
+      <input type="search" class="search-input" id="search-input" placeholder="तरकारी खोज्नुस् — टमाटर, काउली, आलु..." autocomplete="off" aria-label="Search vegetables"/>
       <button class="search-close-btn" id="search-close" aria-label="Close Search">✕</button>
     </div>
-    <div class="search-results" id="search-results">
-      <!-- Populated by JS -->
-    </div>
+    <div class="search-results" id="search-results"></div>
   </div>
 </div>
 
 <!-- TOAST CONTAINER -->
 <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-<!-- ══════════════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════════════ -->
+<!-- ══════════════════ JAVASCRIPT ══════════════════ -->
 <script>
 /* ── SCROLL PROGRESS ── */
 const scrollProg = document.getElementById('scroll-progress');
@@ -2659,63 +1475,251 @@ document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 const hamBtn = document.getElementById('ham-btn');
 const mobileNav = document.getElementById('mobile-nav');
 const mobileNavClose = document.getElementById('mobile-nav-close');
-
-hamBtn.addEventListener('click', () => {
-  mobileNav.classList.add('open');
-  document.body.style.overflow = 'hidden';
-});
+hamBtn.addEventListener('click', () => { mobileNav.classList.add('open'); document.body.style.overflow = 'hidden'; });
 mobileNavClose.addEventListener('click', closeMobileNav);
 mobileNav.addEventListener('click', (e) => { if (e.target === mobileNav) closeMobileNav(); });
-function closeMobileNav() {
-  mobileNav.classList.remove('open');
-  document.body.style.overflow = '';
-}
+function closeMobileNav() { mobileNav.classList.remove('open'); document.body.style.overflow = ''; }
 mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMobileNav));
 
-/* ── CART STATE ── */
+/* ══════════════════════════════════════════
+   FIREBASE DATA INTEGRATION
+   All products come from the billing system via Firebase.
+   The billing system writes to 'gharayesi_website' node.
+   We also read 'gharayesi' for full product data.
+══════════════════════════════════════════ */
+let allProducts = [];   // raw products from billing system
+let liveShopMeta = {};  // shop name, address, etc.
+
+/* Veggie emoji classifier — maps product names to categories */
+function classifyVeggie(name) {
+  const n = name.toLowerCase();
+  const leafy = ['पालक','काउली','बन्दा','साग','पात','lettuce','spinach','cabbage','cauliflower','बोडी','सिमी','फर्सी','लौका','घिरौला','करेला','तितो'];
+  const root  = ['आलु','मुला','गाजर','प्याज','लसुन','अदुवा','potato','carrot','onion','garlic','ginger','radish','बेथे','टर्निप'];
+  const fruitVeg = ['टमाटर','खुर्सानी','भिन्डी','बैगुन','कुन्द्रु','tomato','chilli','okra','brinjal','eggplant','pepper','capsicum','मकै','corn'];
+  const herb  = ['धनिया','पुदिना','तुलसी','करी','coriander','mint','basil','curry','हरियो','methi'];
+  if (leafy.some(k => n.includes(k))) return 'leafy';
+  if (root.some(k => n.includes(k))) return 'root';
+  if (fruitVeg.some(k => n.includes(k))) return 'fruit-veg';
+  if (herb.some(k => n.includes(k))) return 'herb';
+  return 'leafy'; // default — it's a veggie store, assume leafy
+}
+
+/* Emoji auto-assign if no image */
+function getVeggieEmoji(name) {
+  const n = name.toLowerCase();
+  if (n.includes('टमाटर') || n.includes('tomato')) return '🍅';
+  if (n.includes('आलु') || n.includes('potato')) return '🥔';
+  if (n.includes('प्याज') || n.includes('onion')) return '🧅';
+  if (n.includes('गाजर') || n.includes('carrot')) return '🥕';
+  if (n.includes('मुला') || n.includes('radish')) return '🌱';
+  if (n.includes('काउली') || n.includes('cauliflower')) return '🥦';
+  if (n.includes('बन्दा') || n.includes('cabbage')) return '🥬';
+  if (n.includes('पालक') || n.includes('spinach')) return '🥬';
+  if (n.includes('खुर्सानी') || n.includes('chilli') || n.includes('pepper')) return '🌶️';
+  if (n.includes('भिन्डी') || n.includes('okra')) return '🫛';
+  if (n.includes('बैगुन') || n.includes('eggplant') || n.includes('brinjal')) return '🍆';
+  if (n.includes('लसुन') || n.includes('garlic')) return '🧄';
+  if (n.includes('अदुवा') || n.includes('ginger')) return '🫚';
+  if (n.includes('धनिया') || n.includes('coriander')) return '🌿';
+  if (n.includes('मकै') || n.includes('corn')) return '🌽';
+  if (n.includes('फर्सी') || n.includes('pumpkin')) return '🎃';
+  if (n.includes('करेला') || n.includes('bitter')) return '🥒';
+  return '🥬';
+}
+
+/* Render products to grid */
+let currentFilter = 'all';
+
+function renderProducts(products) {
+  const grid = document.getElementById('product-grid');
+  if (!grid) return;
+
+  const filtered = currentFilter === 'all'
+    ? products
+    : products.filter(p => classifyVeggie(p.name) === currentFilter);
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="no-products"><div class="no-products-icon">🥬</div>यस वर्गमा अहिले कुनै उत्पादन छैन।<br/>Billing App बाट थप्नुस्!</div>`;
+    return;
+  }
+
+  grid.innerHTML = '';
+  filtered.forEach((prod, idx) => {
+    const priceStr = prod.prices && prod.prices.length > 0
+      ? `Rs.${prod.prices[0].price}/${prod.prices[0].unit}`
+      : '—';
+    const emoji = prod.emoji || getVeggieEmoji(prod.name);
+    const isFresh = idx < 3;
+    const card = document.createElement('div');
+    card.className = 'prod-card reveal';
+    card.dataset.cat = classifyVeggie(prod.name);
+
+    const imgHtml = prod.imageUrl
+      ? `<img src="${prod.imageUrl}" alt="${prod.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'prod-card-emoji-fallback\\'>${emoji}</div>'"/>`
+      : `<div class="prod-card-emoji-fallback">${emoji}</div>`;
+
+    card.innerHTML = `
+      <div class="prod-card-img">
+        ${imgHtml}
+        ${isFresh ? '<span class="prod-fresh-badge">ताजा</span>' : ''}
+        <button class="prod-wishlist" onclick="toggleWish(this, event)" aria-label="Wishlist">🤍</button>
+      </div>
+      <div class="prod-card-body">
+        <div class="prod-category">ताजा तरकारी</div>
+        <div class="prod-name">${prod.name}</div>
+        <div class="prod-rating">
+          <span class="prod-stars">★★★★★</span>
+          <span class="prod-rating-count">(ताजा)</span>
+        </div>
+        <p class="prod-desc">हरेक दिन बिहान किसानबाट सिधै — ताजा र शुद्ध।</p>
+        <div class="prod-price-row">
+          <div class="prod-price">
+            <span class="prod-price-curr">Rs.${prod.prices && prod.prices.length > 0 ? prod.prices[0].price : '—'}</span>
+            <span class="prod-unit">/${prod.prices && prod.prices.length > 0 ? prod.prices[0].unit : 'kg'}</span>
+          </div>
+          <button class="prod-add-btn" onclick="addToCart('${prod.name}', ${prod.prices && prod.prices.length > 0 ? prod.prices[0].price : 0}, '${emoji}', '${prod.prices && prod.prices.length > 0 ? prod.prices[0].unit : 'kg'}', this)" aria-label="Cart मा थप्नुस्">+</button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+
+    // Trigger reveal
+    setTimeout(() => {
+      revealObs.observe(card);
+    }, 50 * idx);
+  });
+
+  // Update search index
+  searchIndex = products.map(p => ({
+    name: p.name,
+    emoji: p.emoji || getVeggieEmoji(p.name),
+    price: p.prices && p.prices.length > 0 ? `Rs.${p.prices[0].price}/${p.prices[0].unit}` : '—'
+  }));
+}
+
+/* Update hero shop window from Firebase data */
+function updateHeroWindow(products, meta) {
+  if (meta && meta.shopName) {
+    document.getElementById('nav-shop-name').textContent = meta.shopName;
+    document.getElementById('hero-win-name').textContent = meta.shopName;
+    document.getElementById('footer-shop-name').textContent = meta.shopName;
+    if (meta.logoUrl) {
+      document.getElementById('nav-logo-inner').innerHTML = `<img src="${meta.logoUrl}" alt="logo"/>`;
+      document.getElementById('hero-win-icon').innerHTML = `<img src="${meta.logoUrl}" alt="logo"/>`;
+      document.getElementById('footer-logo-inner').innerHTML = `<img src="${meta.logoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:12px"/>`;
+    }
+  }
+
+  document.getElementById('hero-stat-products').textContent = products.length;
+  document.getElementById('dev-prod-count').textContent = products.length;
+  document.getElementById('billing-prod-count').textContent = products.length;
+  document.getElementById('cta-prod-count').textContent = products.length;
+
+  // Update category counts
+  const counts = { all: products.length, leafy: 0, root: 0, 'fruit-veg': 0, herb: 0 };
+  products.forEach(p => { const c = classifyVeggie(p.name); if (counts[c] !== undefined) counts[c]++; });
+  const catSuffix = 'items';
+  document.getElementById('cat-count-all').textContent = counts.all + ' ' + catSuffix;
+  document.getElementById('cat-count-leafy').textContent = counts.leafy + ' ' + catSuffix;
+  document.getElementById('cat-count-root').textContent = counts.root + ' ' + catSuffix;
+  document.getElementById('cat-count-fruit-veg').textContent = counts['fruit-veg'] + ' ' + catSuffix;
+  document.getElementById('cat-count-herb').textContent = counts.herb + ' ' + catSuffix;
+
+  // Hero window product rows (show first 3)
+  const heroList = document.getElementById('hero-prod-list');
+  if (heroList && products.length > 0) {
+    heroList.innerHTML = products.slice(0, 3).map(p => {
+      const emoji = p.emoji || getVeggieEmoji(p.name);
+      const price = p.prices && p.prices.length > 0 ? `Rs.${p.prices[0].price}` : '—';
+      const unit  = p.prices && p.prices.length > 0 ? `1 ${p.prices[0].unit} × ${p.prices[0].price}` : '';
+      return `<div class="shop-prod-row">
+        <div class="shop-prod-emoji">${emoji}</div>
+        <div class="shop-prod-info">
+          <div class="shop-prod-name">${p.name}</div>
+          <div class="shop-prod-meta">${unit}</div>
+        </div>
+        <div class="shop-prod-price">${price}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Device mockup bill preview
+  const devPreview = document.getElementById('dev-bill-preview');
+  if (devPreview && products.length > 0) {
+    devPreview.innerHTML = `<div style="font-size:.6rem;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.3);margin-bottom:10px;text-transform:uppercase;">आजको सूची</div>` +
+      products.slice(0, 4).map(p => {
+        const emoji = p.emoji || getVeggieEmoji(p.name);
+        const price = p.prices && p.prices.length > 0 ? `Rs.${p.prices[0].price}/${p.prices[0].unit}` : '—';
+        return `<div class="hd-bill-row"><div class="hd-bill-item">${emoji} ${p.name}</div><div class="hd-bill-val">${price}</div></div>`;
+      }).join('') +
+      `<div class="hd-bill-total-row"><div class="hd-bill-total-label">💰 Billing App मा</div><div class="hd-bill-total-val">Open →</div></div>`;
+  }
+}
+
+/* Listen for data events */
+document.addEventListener('website-data-ready', (e) => {
+  const data = e.detail;
+  if (data.categories && data.categories[0] && data.categories[0].items) {
+    allProducts = data.categories[0].items;
+    liveShopMeta = data.meta || {};
+    updateHeroWindow(allProducts, liveShopMeta);
+    renderProducts(allProducts);
+    showToast('🔄 Live मूल्य अपडेट भयो!');
+  }
+});
+
+/* Fallback: read full store data */
+document.addEventListener('store-data-ready', (e) => {
+  const data = e.detail;
+  if (allProducts.length === 0 && data.products && data.products.length > 0) {
+    allProducts = data.products;
+    const meta = { shopName: data.shopName, logoUrl: data.logoUrl, shopAddress: data.shopAddress };
+    updateHeroWindow(allProducts, meta);
+    renderProducts(allProducts);
+  }
+});
+
+/* ── FILTER ── */
+function filterProducts(cat, btnEl) {
+  currentFilter = cat;
+  renderProducts(allProducts);
+  if (btnEl) {
+    document.querySelectorAll('.pft').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+  }
+}
+
+/* ── CART ── */
 let cart = [];
 
-function addToCart(name, price, emoji, btnEl) {
+function addToCart(name, price, emoji, unit, btnEl) {
   const existing = cart.find(i => i.name === name);
-  if (existing) {
-    existing.qty++;
-  } else {
-    cart.push({ name, price, emoji, qty: 1 });
-  }
+  if (existing) existing.qty++;
+  else cart.push({ name, price, emoji, unit, qty: 1 });
   updateCartUI();
   openCart();
   showToast(`${emoji} ${name} Cart मा थपियो!`);
-
-  // Animate button
   if (btnEl) {
     btnEl.textContent = '✓';
     btnEl.style.background = 'linear-gradient(135deg, var(--jade3), var(--leaf))';
-    setTimeout(() => {
-      btnEl.textContent = '+';
-      btnEl.style.background = '';
-    }, 1200);
+    setTimeout(() => { btnEl.textContent = '+'; btnEl.style.background = ''; }, 1200);
   }
 }
 
 function updateCartUI() {
   const count = cart.reduce((s, i) => s + i.qty, 0);
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const countEl = document.getElementById('cart-count');
+  document.getElementById('cart-count').textContent = count;
   const subtotalEl = document.getElementById('cart-subtotal-val');
+  if (subtotalEl) subtotalEl.textContent = 'Rs.' + total.toLocaleString();
   const emptyState = document.getElementById('cart-empty-state');
   const itemsList = document.getElementById('cart-items-list');
   const cartFooter = document.getElementById('cart-footer');
-
-  countEl.textContent = count;
-  if (subtotalEl) subtotalEl.textContent = 'Rs.' + total.toLocaleString();
-
   if (cart.length === 0) {
-    emptyState.style.display = 'flex';
-    itemsList.style.display = 'none';
+    emptyState.style.display = 'flex'; itemsList.style.display = 'none';
     if (cartFooter) cartFooter.style.display = 'none';
   } else {
-    emptyState.style.display = 'none';
-    itemsList.style.display = 'block';
+    emptyState.style.display = 'none'; itemsList.style.display = 'block';
     if (cartFooter) cartFooter.style.display = 'block';
     renderCartItems();
   }
@@ -2728,7 +1732,7 @@ function renderCartItems() {
       <div class="cart-item-img">${item.emoji}</div>
       <div class="cart-item-info">
         <div class="cart-item-name">${item.name}</div>
-        <div class="cart-item-meta">Rs.${item.price} × ${item.qty}</div>
+        <div class="cart-item-meta">Rs.${item.price} × ${item.qty} ${item.unit}</div>
         <div class="cart-item-qty">
           <button class="cart-qty-btn" onclick="changeQty(${idx}, -1)">−</button>
           <span class="cart-qty-num">${item.qty}</span>
@@ -2747,10 +1751,7 @@ function changeQty(idx, delta) {
   updateCartUI();
 }
 
-function removeFromCart(idx) {
-  cart.splice(idx, 1);
-  updateCartUI();
-}
+function removeFromCart(idx) { cart.splice(idx, 1); updateCartUI(); }
 
 function openCart() {
   document.getElementById('cart-overlay').classList.add('open');
@@ -2768,13 +1769,22 @@ document.getElementById('cart-overlay').addEventListener('click', (e) => {
   if (e.target === document.getElementById('cart-overlay')) closeCartFn();
 });
 
-function openAppWithCart() {
-  showToast('🌿 App खोलिँदैछ...');
-  setTimeout(() => { window.location.href = 'gharayesicalculatorbillingsystem.html'; }, 600);
+/* WhatsApp order from cart */
+function openWhatsAppOrder() {
+  if (!cart.length) { showToast('⚠️ Cart खाली छ'); return; }
+  let msg = `🥬 *घरायेसी Order*\n\n`;
+  cart.forEach((item, i) => {
+    msg += `${i + 1}. ${item.name} — ${item.qty} ${item.unit} × Rs.${item.price} = *Rs.${item.price * item.qty}*\n`;
+  });
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  msg += `\n*जम्मा: Rs.${total}* + डेलिभरी Rs.25\n\nName:\nAddress:\nPhone:`;
+  window.open(`https://wa.me/9779709612863?text=${encodeURIComponent(msg)}`, '_blank');
+  showToast('📲 WhatsApp खुल्यो!');
 }
 
 /* ── WISHLIST ── */
-function toggleWish(btn) {
+function toggleWish(btn, e) {
+  e.stopPropagation();
   btn.classList.toggle('liked');
   const liked = btn.classList.contains('liked');
   btn.textContent = liked ? '❤️' : '🤍';
@@ -2782,19 +1792,7 @@ function toggleWish(btn) {
 }
 
 /* ── SEARCH ── */
-const products = [
-  { name: 'बासमती चामल', cat: 'अन्न', emoji: '🌾', price: 'Rs.95/kg' },
-  { name: 'सरसोको तेल', cat: 'तेल', emoji: '🫙', price: 'Rs.190/L' },
-  { name: 'आयोडाइज्ड नुन', cat: 'मसला', emoji: '🧂', price: 'Rs.35/kg' },
-  { name: 'मुसुर दाल', cat: 'दाल', emoji: '🫘', price: 'Rs.120/kg' },
-  { name: 'टमाटर', cat: 'तरकारी', emoji: '🍅', price: 'Rs.60/kg' },
-  { name: 'गाईको दूध', cat: 'डेरी', emoji: '🥛', price: 'Rs.90/L' },
-  { name: 'खुर्सानी धुलो', cat: 'मसला', emoji: '🌶️', price: 'Rs.250/kg' },
-  { name: 'हरियो धनिया', cat: 'तरकारी', emoji: '🌿', price: 'Rs.20/bundle' },
-  { name: 'प्याज', cat: 'तरकारी', emoji: '🧅', price: 'Rs.45/kg' },
-  { name: 'आलु', cat: 'तरकारी', emoji: '🥔', price: 'Rs.30/kg' },
-];
-
+let searchIndex = [];
 const searchTrigger = document.getElementById('search-trigger');
 const searchOverlay = document.getElementById('search-overlay');
 const searchCloseBtn = document.getElementById('search-close');
@@ -2816,23 +1814,23 @@ function closeSearch() {
 
 searchCloseBtn.addEventListener('click', closeSearch);
 searchOverlay.addEventListener('click', (e) => { if (e.target === searchOverlay) closeSearch(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeSearch(); closeMobileNav(); closeCartFn(); } });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closeSearch(); closeMobileNav(); closeCartFn(); }
+});
 
 searchInputEl.addEventListener('input', (e) => {
   const q = e.target.value.toLowerCase().trim();
   if (!q) { searchResultsEl.classList.remove('show'); return; }
-  const matches = products.filter(p =>
-    p.name.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q)
-  );
+  const matches = searchIndex.filter(p => p.name.toLowerCase().includes(q));
   if (matches.length === 0) {
-    searchResultsEl.innerHTML = `<div class="search-result-item"><div class="search-result-name" style="color:var(--g3)">कुनै नतिजा भेटिएन</div></div>`;
+    searchResultsEl.innerHTML = `<div class="search-result-item"><div class="search-result-name" style="color:var(--g3)">कुनै तरकारी भेटिएन</div></div>`;
   } else {
     searchResultsEl.innerHTML = matches.slice(0, 6).map(p => `
       <div class="search-result-item" onclick="closeSearch(); showToast('${p.emoji} ${p.name} हेरिँदैछ')">
         <div class="search-result-icon">${p.emoji}</div>
         <div>
           <div class="search-result-name">${p.name}</div>
-          <div class="search-result-cat">${p.cat}</div>
+          <div class="search-result-cat">ताजा तरकारी</div>
         </div>
         <div class="search-result-price">${p.price}</div>
       </div>
@@ -2841,33 +1839,14 @@ searchInputEl.addEventListener('input', (e) => {
   searchResultsEl.classList.add('show');
 });
 
-/* ── PRODUCT FILTER ── */
-function filterProducts(cat, btnEl) {
-  const cards = document.querySelectorAll('.prod-grid .prod-card');
-  cards.forEach(card => {
-    if (cat === 'all' || card.dataset.cat === cat) {
-      card.style.display = '';
-      card.style.opacity = '0';
-      setTimeout(() => { card.style.transition = 'opacity .35s'; card.style.opacity = '1'; }, 50);
-    } else {
-      card.style.opacity = '0';
-      setTimeout(() => { card.style.display = 'none'; }, 300);
-    }
-  });
-  if (btnEl) {
-    document.querySelectorAll('.pft').forEach(b => b.classList.remove('active'));
-    btnEl.classList.add('active');
-  }
-}
-
-/* ── COUNTDOWN TIMER ── */
+/* ── CLOSING TIME COUNTDOWN (8 PM) ── */
 (function initCountdown() {
-  const end = new Date();
-  end.setHours(end.getHours() + 11, end.getMinutes() + 47, end.getSeconds() + 33);
-
   function update() {
     const now = new Date();
-    let diff = Math.max(0, Math.floor((end - now) / 1000));
+    const close = new Date();
+    close.setHours(20, 0, 0, 0); // 8 PM closing
+    if (now >= close) close.setDate(close.getDate() + 1);
+    let diff = Math.max(0, Math.floor((close - now) / 1000));
     const h = Math.floor(diff / 3600); diff -= h * 3600;
     const m = Math.floor(diff / 60); diff -= m * 60;
     const s = diff;
@@ -2907,45 +1886,12 @@ function subscribeNewsletter() {
   input.value = '';
 }
 
-/* ── STAT COUNTERS ── */
-const counters = [
-  { sel: '.app-cta-stat-num', targets: [5000, 200000, 4.9], suffixes: ['+', '+', ' ★'] }
-];
-const counterObs = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (!e.isIntersecting) return;
-    const nums = e.target.querySelectorAll('.app-cta-stat-num');
-    const targets = [5000, 200000, 4.9];
-    const suffixes = ['+', '+', ' ★'];
-    nums.forEach((el, i) => {
-      const target = targets[i]; const suf = suffixes[i];
-      let start = 0;
-      const dur = 1800;
-      const step = (ts) => {
-        if (!start) start = ts;
-        const prog = Math.min((ts - start) / dur, 1);
-        const eased = 1 - Math.pow(1 - prog, 3);
-        const val = eased * target;
-        el.textContent = (target >= 1000 ? Math.floor(val).toLocaleString() : val.toFixed(1)) + suf;
-        if (prog < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-    });
-    counterObs.unobserve(e.target);
-  });
-}, { threshold: 0.4 });
-const ctaSection = document.querySelector('.app-cta-stats');
-if (ctaSection) counterObs.observe(ctaSection);
-
 /* ── SMOOTH ANCHOR SCROLL ── */
 document.querySelectorAll('a[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
     const id = a.getAttribute('href').slice(1);
     const target = document.getElementById(id);
-    if (target) {
-      e.preventDefault();
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   });
 });
 </script>
