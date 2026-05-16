@@ -2050,7 +2050,10 @@ document.addEventListener('keydown', (e) => {
 searchInputEl.addEventListener('input', (e) => {
   const q = e.target.value.toLowerCase().trim();
   if (!q) { searchResultsEl.classList.remove('show'); return; }
-  const matches = searchIndex.filter(p => p.name.toLowerCase().includes(q));
+  const matches = searchIndex.filter(p =>
+  p.name.toLowerCase().includes(q) ||
+  (p.emoji && p.emoji.includes(q))
+);
   if (matches.length === 0) {
     searchResultsEl.innerHTML = `<div class="search-result-item"><div class="search-result-name" style="color:var(--g3)">कुनै तरकारी भेटिएन</div></div>`;
   } else {
