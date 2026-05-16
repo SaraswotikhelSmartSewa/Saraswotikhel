@@ -2058,7 +2058,7 @@ searchInputEl.addEventListener('input', (e) => {
     searchResultsEl.innerHTML = `<div class="search-result-item"><div class="search-result-name" style="color:var(--g3)">कुनै तरकारी भेटिएन</div></div>`;
   } else {
     searchResultsEl.innerHTML = matches.slice(0, 6).map(p => `
-      <div class="search-result-item" onclick="closeSearch(); showToast('${p.emoji} ${p.name} हेरिँदैछ')">
+      <div class="search-result-item" onclick="goToProduct('${p.name}')">
         <div class="search-result-icon">${p.emoji}</div>
         <div>
           <div class="search-result-name">${p.name}</div>
@@ -2128,6 +2128,45 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   });
 });
+/* ── GO TO PRODUCT FROM SEARCH ── */
+function goToProduct(name) {
+  closeSearch();
+
+  // Reset filter to all so product is visible
+  currentFilter = 'all';
+  renderProducts(allProducts);
+  document.querySelectorAll('.pft').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.pft')[0].classList.add('active');
+
+  // Wait for render then scroll and highlight
+  setTimeout(() => {
+    const cards = document.querySelectorAll('.prod-card');
+    let found = null;
+    cards.forEach(card => {
+      const cardName = card.querySelector('.prod-name');
+      if (cardName && cardName.textContent.trim() === name.trim()) {
+        found = card;
+      }
+    });
+
+    if (found) {
+      // Scroll to products section first
+      document.getElementById('products').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Then highlight the card
+      setTimeout(() => {
+        found.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        found.style.transition = 'box-shadow 0.3s, border-color 0.3s';
+        found.style.boxShadow = '0 0 0 3px var(--jade3), 0 20px 60px rgba(45,106,79,.3)';
+        found.style.borderColor = 'var(--jade3)';
+        setTimeout(() => {
+          found.style.boxShadow = '';
+          found.style.borderColor = '';
+        }, 2500);
+      }, 600);
+    }
+  }, 100);
+}
 </script>
 </body>
 </html>
