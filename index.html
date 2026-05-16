@@ -1380,7 +1380,7 @@ footer { background: var(--ink); border-top: 1px solid rgba(255,255,255,.06); }
     <div>
       <div class="footer-col-title">समय</div>
       <ul class="footer-links">
-        <li><a href="#">📅 आइत–शुक्र: ८–८</a></li>
+        <li><a href="#" id="footer-hours-display">📅 आइत–शुक्र: ८–८</a></li>  
         <li><a href="#">📅 शनिबार: ८–८</a></li>
         <li><a href="#">🛵 डेलिभरी: Rs.25</a></li>
         <li><a href="#">📍 सरस्वतीखेल</a></li>
@@ -1656,6 +1656,159 @@ function updateHeroWindow(products, meta) {
   }
 }
 
+/* ── APPLY ALL WEBSITE CONTENT FROM FIREBASE ── */
+function applyWebsiteContent(data) {
+  const meta    = data.meta    || {};
+  const content = data.content || {};
+
+  /* ── SHOP NAME & LOGO ── */
+  if (meta.shopName) {
+    document.getElementById('nav-shop-name').textContent    = meta.shopName;
+    document.getElementById('hero-win-name').textContent    = meta.shopName;
+    document.getElementById('footer-shop-name').textContent = meta.shopName;
+    document.getElementById('bill-shopname') && (document.getElementById('bill-shopname').textContent = meta.shopName);
+  }
+  if (meta.logoUrl) {
+    const logoImg = `<img src="${meta.logoUrl}" alt="logo" style="width:100%;height:100%;object-fit:cover;border-radius:14px"/>`;
+    document.getElementById('nav-logo-inner').innerHTML    = logoImg;
+    document.getElementById('hero-win-icon').innerHTML     = logoImg;
+    document.getElementById('footer-logo-inner').innerHTML = logoImg;
+  }
+
+  /* ── HERO SECTION ── */
+  if (content.heroHeadline) {
+    const h1 = document.querySelector('.hero h1');
+    if (h1) {
+      // Split into lines — first word gets gold, second gets outline style
+      const lines = content.heroHeadline.split(',');
+      if (lines.length >= 2) {
+        h1.innerHTML = `${lines[0].trim()}<br/><em class="gold-text">${lines[1].trim()},</em><br/><span class="outline-text">घरैमा</span>`;
+      } else {
+        h1.innerHTML = `<em class="gold-text">${content.heroHeadline}</em>`;
+      }
+    }
+  }
+  if (content.heroSub) {
+    const sub = document.querySelector('.hero-sub');
+    if (sub) sub.textContent = content.heroSub;
+  }
+
+  /* ── ANNOUNCEMENT TICKER ── */
+  if (content.tickerItems && content.tickerItems.trim()) {
+    const lines = content.tickerItems.split('\n').filter(l => l.trim());
+    if (lines.length > 0) {
+      const ticker = document.querySelector('.announce-ticker');
+      if (ticker) {
+        // Duplicate for seamless loop
+        const all = [...lines, ...lines];
+        ticker.innerHTML = all.map(l => `<span>${l.trim()}</span>`).join('');
+      }
+    }
+  }
+
+  /* ── TRUST STRIP ── */
+  if (content.trustItems && content.trustItems.trim()) {
+    const lines = content.trustItems.split('\n').filter(l => l.trim());
+    if (lines.length > 0) {
+      const marquee = document.querySelector('.trust-marquee');
+      if (marquee) {
+        const sep = `<div class="trust-sep"></div>`;
+        const items = lines.map(l => `<div class="trust-item">${l.trim()}</div>`).join(sep);
+        // Duplicate for seamless loop
+        marquee.innerHTML = items + sep + items + sep;
+      }
+    }
+  }
+
+  /* ── FLASH / OFFER SECTION ── */
+  if (content.flashTitle) {
+    const el = document.querySelector('.flash-title');
+    if (el) {
+      const parts = content.flashTitle.split('—');
+      if (parts.length >= 2) {
+        el.innerHTML = `${parts[0].trim()} —<br/><span>${parts[1].trim()}</span>`;
+      } else {
+        el.innerHTML = content.flashTitle;
+      }
+    }
+  }
+  if (content.flashSub) {
+    const el = document.querySelector('.flash-sub');
+    if (el) el.textContent = content.flashSub;
+  }
+
+  /* ── CLOSING TIME COUNTDOWN ── */
+  if (meta.closingTime) {
+    const parts = meta.closingTime.split(':');
+    window._closingHour   = parseInt(parts[0]) || 20;
+    window._closingMinute = parseInt(parts[1]) || 0;
+  }
+
+  /* ── WHATSAPP NUMBER ── */
+  if (meta.whatsappNumber) {
+    window._whatsappNumber = meta.whatsappNumber;
+    // Update all WhatsApp links
+    document.querySelectorAll('a[href*="wa.me"]').forEach(a => {
+      const url = a.getAttribute('href');
+      const newUrl = url.replace(/wa\.me\/[0-9]+/, `wa.me/977${meta.whatsappNumber.replace(/^977/, '').replace(/^0/, '')}`);
+      a.setAttribute('href', newUrl);
+    });
+  }
+
+  /* ── DELIVERY FEE ── */
+  if (meta.deliveryFee) {
+    document.querySelectorAll('.delivery-fee-display').forEach(el => {
+      el.textContent = 'Rs.' + meta.deliveryFee;
+    });
+    // Update cart footer delivery text
+    const cartDelivery = document.querySelector('.cart-footer .cart-subtotal:last-of-type .cart-subtotal-val');
+    if (cartDelivery) cartDelivery.textContent = 'Rs.' + meta.deliveryFee;
+    window._deliveryFee = meta.deliveryFee;
+  }
+
+  /* ── FOOTER HOURS ── */
+  if (content.footerHours) {
+    const el = document.getElementById('footer-hours-display');
+    if (el) el.textContent = content.footerHours;
+  }
+
+  /* ── NEWSLETTER ── */
+  if (content.newsletterTitle) {
+    const el = document.querySelector('.newsletter-title');
+    if (el) el.innerHTML = content.newsletterTitle.replace(' र ', ' र<br/>');
+  }
+  if (content.newsletterSub) {
+    const el = document.querySelector('.newsletter-sub');
+    if (el) el.textContent = content.newsletterSub;
+  }
+
+  /* ── TESTIMONIALS ── */
+  if (content.testimonials && content.testimonials.length > 0) {
+    const grid = document.querySelector('.testi-grid');
+    if (grid) {
+      grid.innerHTML = content.testimonials.map(t => {
+        if (!t.name && !t.quote) return '';
+        const stars = '★'.repeat(t.stars || 5);
+        return `
+          <div class="testi-card reveal">
+            <div class="testi-stars">${stars}</div>
+            <p class="testi-text">"${t.quote}"</p>
+            <div class="testi-author">
+              <div class="testi-avatar">🙂</div>
+              <div>
+                <div class="testi-name">${t.name}</div>
+                <div class="testi-loc">${t.loc}</div>
+              </div>
+              <div class="testi-verified">✓ Verified</div>
+            </div>
+          </div>`;
+      }).join('');
+      // Re-observe new cards for reveal animation
+      grid.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+    }
+  }
+}
+
 /* Listen for data events */
 document.addEventListener('website-data-ready', (e) => {
   const data = e.detail;
@@ -1664,7 +1817,8 @@ document.addEventListener('website-data-ready', (e) => {
     liveShopMeta = data.meta || {};
     updateHeroWindow(allProducts, liveShopMeta);
     renderProducts(allProducts);
-    showToast('🔄 Live मूल्य अपडेट भयो!');
+    applyWebsiteContent(data);
+    showToast('🔄 Live अपडेट भयो!');
   }
 });
 
@@ -1772,13 +1926,17 @@ document.getElementById('cart-overlay').addEventListener('click', (e) => {
 /* WhatsApp order from cart */
 function openWhatsAppOrder() {
   if (!cart.length) { showToast('⚠️ Cart खाली छ'); return; }
+  const waNumber = window._whatsappNumber
+    ? '977' + window._whatsappNumber.replace(/^977/, '').replace(/^0/, '')
+    : '9779709612863';
+  const deliveryFee = window._deliveryFee || 25;
   let msg = `🥬 *घरायेसी Order*\n\n`;
   cart.forEach((item, i) => {
     msg += `${i + 1}. ${item.name} — ${item.qty} ${item.unit} × Rs.${item.price} = *Rs.${item.price * item.qty}*\n`;
   });
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  msg += `\n*जम्मा: Rs.${total}* + डेलिभरी Rs.25\n\nName:\nAddress:\nPhone:`;
-  window.open(`https://wa.me/9779709612863?text=${encodeURIComponent(msg)}`, '_blank');
+  msg += `\n*जम्मा: Rs.${total}* + डेलिभरी Rs.${deliveryFee}\n\nName:\nAddress:\nPhone:`;
+  window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
   showToast('📲 WhatsApp खुल्यो!');
 }
 
@@ -1844,7 +2002,9 @@ searchInputEl.addEventListener('input', (e) => {
   function update() {
     const now = new Date();
     const close = new Date();
-    close.setHours(20, 0, 0, 0); // 8 PM closing
+    const closingHour   = window._closingHour   || 20;
+    const closingMinute = window._closingMinute  || 0;
+    close.setHours(closingHour, closingMinute, 0, 0);
     if (now >= close) close.setDate(close.getDate() + 1);
     let diff = Math.max(0, Math.floor((close - now) / 1000));
     const h = Math.floor(diff / 3600); diff -= h * 3600;
