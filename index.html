@@ -2070,8 +2070,9 @@ document.addEventListener('website-data-ready', (e) => {
     allProducts = products;
     updateHeroWindow(allProducts, liveShopMeta);
     renderProducts(allProducts);
-    applyWebsiteContent(data);
   }
+  // Always apply website content (branding, text, etc.) regardless of products
+  applyWebsiteContent(data);
 });
 
 /* Fallback: read full store data — always runs, merges if website node had no products */
