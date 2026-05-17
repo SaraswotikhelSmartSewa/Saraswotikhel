@@ -945,9 +945,9 @@ footer { background: var(--ink); border-top: 1px solid rgba(255,255,255,.06); }
       <em class="gold-text">तरकारी,</em><br/>
       <span class="outline-text">घरैमा</span>
     </h1>
-    <p class="hero-sub">
-      हरेक दिन बिहान किसानबाट सिधै — ताजा, शुद्ध र उचित मूल्यमा। सरस्वतीखेलको भरपर्दो तरकारी पसल।
-    </p>
+    <p class="hero-sub" id="hero-sub-text">
+        हरेक दिन बिहान किसानबाट सिधै — ताजा, शुद्ध र उचित मूल्यमा। सरस्वतीखेलको भरपर्दो तरकारी पसल।
+      </p>
     <div class="hero-badges">
       <div class="hero-badge-pill"><span>🥬</span> रोज ताजा</div>
       <div class="hero-badge-pill"><span>⚖️</span> सही तौल</div>
@@ -1258,7 +1258,7 @@ footer { background: var(--ink); border-top: 1px solid rgba(255,255,255,.06); }
           हामीलाई<br/>
           <span>भेट्न आउनुस्!</span>
         </h2>
-        <p class="shop-cta-sub">सरस्वतीखेल, भक्तपुर — हरेक दिन बिहान ८ बजेदेखि साँझ ८ बजेसम्म। ताजा तरकारी, उचित मूल्य।</p>
+        <p class="shop-cta-sub" id="shop-cta-sub-text">सरस्वतीखेल, भक्तपुर — हरेक दिन बिहान ८ बजेदेखि साँझ ८ बजेसम्म। ताजा तरकारी, उचित मूल्य।</p>
         <div class="shop-cta-stats">
           <div><div class="shop-cta-stat-num">बिहान ८</div><div class="shop-cta-stat-label">खुल्ने समय</div></div>
           <div><div class="shop-cta-stat-num">साँझ ८</div><div class="shop-cta-stat-label">बन्द हुने समय</div></div>
@@ -1636,49 +1636,169 @@ function applyWebsiteContent(data) {
   const meta    = data.meta    || {};
   const content = data.content || {};
 
+  /* ── PAGE TITLE & FAVICON ── */
+  if (meta.pageTitle)  document.title = meta.pageTitle;
+  if (meta.faviconUrl) {
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+    link.href = meta.faviconUrl;
+  }
+
+  /* ── META SEO ── */
+  if (meta.metaDesc) {
+    let el = document.querySelector('meta[name="description"]');
+    if (!el) { el = document.createElement('meta'); el.name = 'description'; document.head.appendChild(el); }
+    el.content = meta.metaDesc;
+  }
+  if (meta.metaKeywords) {
+    let el = document.querySelector('meta[name="keywords"]');
+    if (!el) { el = document.createElement('meta'); el.name = 'keywords'; document.head.appendChild(el); }
+    el.content = meta.metaKeywords;
+  }
+  if (meta.ogUrl) {
+    ['og:image','twitter:image'].forEach(prop => {
+      let el = document.querySelector(`meta[property="${prop}"],meta[name="${prop}"]`);
+      if (!el) { el = document.createElement('meta'); el.setAttribute(prop.includes('twitter') ? 'name' : 'property', prop); document.head.appendChild(el); }
+      el.content = meta.ogUrl;
+    });
+  }
+
+  /* ── COLORS & FONTS ── */
+  const root = document.documentElement;
+  if (content.colorJade)  root.style.setProperty('--jade',  content.colorJade);
+  if (content.colorGold)  root.style.setProperty('--gold',  content.colorGold);
+  if (content.colorInk)   root.style.setProperty('--ink',   content.colorInk);
+  if (content.colorCream) root.style.setProperty('--cream', content.colorCream);
+  if (content.colorAmber) root.style.setProperty('--amber', content.colorAmber);
+  if (content.colorLeaf)  root.style.setProperty('--leaf',  content.colorLeaf);
+  if (content.font) {
+    root.style.setProperty('--font', `'${content.font}', sans-serif`);
+    // Inject Google Font if not already loaded
+    const fontId = 'dyn-font-' + content.font.replace(/\s/g,'');
+    if (!document.getElementById(fontId)) {
+      const link = document.createElement('link');
+      link.id = fontId;
+      link.rel = 'stylesheet';
+      link.href = `https://fonts.googleapis.com/css2?family=${content.font.replace(/ /g,'+')}:wght@300;400;600;700;800&display=swap`;
+      document.head.appendChild(link);
+    }
+  }
+
   /* ── SHOP NAME & LOGO ── */
   if (meta.shopName) {
-    document.getElementById('nav-shop-name').textContent    = meta.shopName;
-    document.getElementById('hero-win-name').textContent    = meta.shopName;
-    document.getElementById('footer-shop-name').textContent = meta.shopName;
-    document.getElementById('bill-shopname') && (document.getElementById('bill-shopname').textContent = meta.shopName);
+    document.querySelectorAll('#nav-shop-name,#hero-win-name,#footer-shop-name').forEach(el => {
+      if (el) el.textContent = meta.shopName;
+    });
+    const billShopName = document.getElementById('bill-shopname');
+    if (billShopName) billShopName.textContent = meta.shopName;
+  }
+  if (meta.tagline) {
+    const el = document.querySelector('.nav-tagline');
+    if (el) el.textContent = meta.tagline;
   }
   if (meta.logoUrl) {
     const logoImg = `<img src="${meta.logoUrl}" alt="logo" style="width:100%;height:100%;object-fit:cover;border-radius:14px"/>`;
-    document.getElementById('nav-logo-inner').innerHTML    = logoImg;
-    document.getElementById('hero-win-icon').innerHTML     = logoImg;
-    document.getElementById('footer-logo-inner').innerHTML = logoImg;
+    ['nav-logo-inner','hero-win-icon','footer-logo-inner'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = logoImg;
+    });
+    const fbLogoBox = document.getElementById('footer-logo-box');
+    if (fbLogoBox) { fbLogoBox.innerHTML = logoImg; }
   }
 
-  /* ── HERO SECTION ── */
-  if (content.heroHeadline) {
-    const h1 = document.querySelector('.hero h1');
-    if (h1) {
-      // Split into lines — first word gets gold, second gets outline style
-      const lines = content.heroHeadline.split(',');
-      if (lines.length >= 2) {
-        h1.innerHTML = `${lines[0].trim()}<br/><em class="gold-text">${lines[1].trim()},</em><br/><span class="outline-text">घरैमा</span>`;
-      } else {
-        h1.innerHTML = `<em class="gold-text">${content.heroHeadline}</em>`;
-      }
-    }
+  /* ── ANNOUNCEMENT BAR ── */
+  if (content.announceBg) {
+    const bar = document.querySelector('.announce-bar');
+    if (bar) bar.style.background = content.announceBg;
   }
-  if (content.heroSub) {
-    const sub = document.querySelector('.hero-sub');
-    if (sub) sub.textContent = content.heroSub;
-  }
-
-  /* ── ANNOUNCEMENT TICKER ── */
   if (content.tickerItems && content.tickerItems.trim()) {
     const lines = content.tickerItems.split('\n').filter(l => l.trim());
     if (lines.length > 0) {
       const ticker = document.querySelector('.announce-ticker');
       if (ticker) {
-        // Duplicate for seamless loop
         const all = [...lines, ...lines];
         ticker.innerHTML = all.map(l => `<span>${l.trim()}</span>`).join('');
       }
     }
+  }
+
+  /* ── NAV LINKS ── */
+  if (content.navLinks && content.navLinks.length > 0) {
+    const navUl = document.querySelector('nav .nav-links');
+    if (navUl) {
+      navUl.innerHTML = content.navLinks.map(nl =>
+        `<li><a href="${nl.link}">${nl.label}</a></li>`
+      ).join('');
+    }
+    const mobileNavLinks = document.querySelector('.mobile-nav-links');
+    if (mobileNavLinks) {
+      mobileNavLinks.innerHTML = content.navLinks.map(nl =>
+        `<a href="${nl.link}"><span></span>${nl.label}</a>`
+      ).join('');
+      mobileNavLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+        document.getElementById('mobile-nav').classList.remove('open');
+        document.body.style.overflow = '';
+      }));
+    }
+  }
+
+  /* ── HERO SECTION ── */
+  if (content.heroEyebrow) {
+    const el = document.querySelector('.hero-eyebrow');
+    if (el) el.innerHTML = `<span class="hero-eyebrow-dot"></span>${content.heroEyebrow}`;
+  }
+  if (content.heroHeadline || content.heroLine3) {
+    const h1 = document.querySelector('.hero h1');
+    if (h1) {
+      const headline = content.heroHeadline || '';
+      const line3    = content.heroLine3    || 'घरैमा';
+      const lines = headline.split(',');
+      if (lines.length >= 2) {
+        h1.innerHTML = `${lines[0].trim()}<br/><em class="gold-text">${lines[1].trim()},</em><br/><span class="outline-text">${line3}</span>`;
+      } else {
+        h1.innerHTML = `<em class="gold-text">${headline}</em><br/><span class="outline-text">${line3}</span>`;
+      }
+    }
+  }
+  if (content.heroSub) {
+    const el = document.querySelector('.hero-sub');
+    if (el) el.textContent = content.heroSub;
+  }
+  if (content.heroBadges && content.heroBadges.length > 0) {
+    const badgesEl = document.querySelector('.hero-badges');
+    if (badgesEl) {
+      badgesEl.innerHTML = content.heroBadges.map(b => {
+        const parts = b.trim().split(' ');
+        const emoji = parts[0];
+        const text  = parts.slice(1).join(' ');
+        return `<div class="hero-badge-pill"><span>${emoji}</span>${text}</div>`;
+      }).join('');
+    }
+  }
+  if (content.heroBtn1Text || content.heroBtn1Link) {
+    const btn = document.querySelector('.hero-actions .btn-primary');
+    if (btn) {
+      if (content.heroBtn1Text) btn.textContent = content.heroBtn1Text;
+      if (content.heroBtn1Link) btn.href = content.heroBtn1Link;
+    }
+  }
+  if (content.heroBtn2Text || content.heroBtn2Link) {
+    const btn = document.querySelector('.hero-actions .btn-secondary');
+    if (btn) {
+      if (content.heroBtn2Text) btn.textContent = content.heroBtn2Text;
+      if (content.heroBtn2Link) btn.href = content.heroBtn2Link;
+    }
+  }
+  if (content.heroBgUrl) {
+    const heroEl = document.querySelector('.hero');
+    if (heroEl) heroEl.style.backgroundImage = `url('${content.heroBgUrl}')`;
+  }
+  if (content.heroFloats) {
+    const floatEls = document.querySelectorAll('.hero-float-el');
+    const floats = content.heroFloats.split(',').map(f => f.trim()).filter(Boolean);
+    floatEls.forEach((el, i) => {
+      if (floats[i]) el.textContent = floats[i];
+    });
   }
 
   /* ── TRUST STRIP ── */
@@ -1689,9 +1809,63 @@ function applyWebsiteContent(data) {
       if (marquee) {
         const sep = `<div class="trust-sep"></div>`;
         const items = lines.map(l => `<div class="trust-item">${l.trim()}</div>`).join(sep);
-        // Duplicate for seamless loop
         marquee.innerHTML = items + sep + items + sep;
       }
+    }
+  }
+
+  /* ── PRODUCTS SECTION ── */
+  if (content.prodLabel) {
+    const el = document.querySelector('#products .section-label .live-badge');
+    if (el) el.innerHTML = `<span class="live-dot"></span>${content.prodLabel}`;
+  }
+  if (content.prodTitle) {
+    const el = document.querySelector('#products .section-title');
+    if (el) el.innerHTML = content.prodTitle.replace(/([^<]*)(<em>[^<]*<\/em>)/gi, '$1$2') || content.prodTitle;
+  }
+  if (content.prodFilters) {
+    const tabsEl = document.querySelector('.product-filter-tabs');
+    if (tabsEl) {
+      const lines = content.prodFilters.split('\n').filter(l => l.trim());
+      tabsEl.innerHTML = lines.map((line, i) => {
+        const parts = line.split('|');
+        const label = parts[0].trim();
+        const cat   = parts[1] ? parts[1].trim() : 'all';
+        return `<button class="pft${i===0?' active':''}" onclick="filterProducts('${cat}', this)" role="tab">${label}</button>`;
+      }).join('');
+    }
+  }
+  if (content.prodWaText) {
+    const el = document.querySelector('#products .btn-primary');
+    if (el) el.textContent = content.prodWaText;
+  }
+
+  /* ── HOW IT WORKS ── */
+  if (content.howLabel) {
+    const el = document.querySelector('#how-it-works .section-label');
+    if (el) el.textContent = content.howLabel;
+  }
+  if (content.howTitle) {
+    const el = document.querySelector('#how-it-works .section-title');
+    if (el) el.innerHTML = content.howTitle;
+  }
+  if (content.howSub) {
+    const el = document.querySelector('#how-it-works .section-sub');
+    if (el) el.textContent = content.howSub;
+  }
+  if (content.howSteps && content.howSteps.length > 0) {
+    const stepsEl = document.querySelector('.how-steps');
+    if (stepsEl) {
+      stepsEl.innerHTML = content.howSteps.map((step, i) => `
+        <div class="how-step reveal">
+          <div class="how-step-num">${String(i+1).padStart(2,'0')}</div>
+          <div class="how-step-body">
+            <div class="how-step-title">${step.title}</div>
+            <div class="how-step-desc">${step.desc}</div>
+          </div>
+        </div>
+      `).join('');
+      stepsEl.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
     }
   }
 
@@ -1700,11 +1874,9 @@ function applyWebsiteContent(data) {
     const el = document.querySelector('.flash-title');
     if (el) {
       const parts = content.flashTitle.split('—');
-      if (parts.length >= 2) {
-        el.innerHTML = `${parts[0].trim()} —<br/><span>${parts[1].trim()}</span>`;
-      } else {
-        el.innerHTML = content.flashTitle;
-      }
+      el.innerHTML = parts.length >= 2
+        ? `${parts[0].trim()} —<br/><span>${parts[1].trim()}</span>`
+        : content.flashTitle;
     }
   }
   if (content.flashSub) {
@@ -1719,44 +1891,6 @@ function applyWebsiteContent(data) {
     window._closingMinute = parseInt(parts[1]) || 0;
   }
 
-  /* ── WHATSAPP NUMBER ── */
-  if (meta.whatsappNumber) {
-    window._whatsappNumber = meta.whatsappNumber;
-    // Update all WhatsApp links
-    document.querySelectorAll('a[href*="wa.me"]').forEach(a => {
-      const url = a.getAttribute('href');
-      const newUrl = url.replace(/wa\.me\/[0-9]+/, `wa.me/977${meta.whatsappNumber.replace(/^977/, '').replace(/^0/, '')}`);
-      a.setAttribute('href', newUrl);
-    });
-  }
-
-  /* ── DELIVERY FEE ── */
-  if (meta.deliveryFee) {
-    document.querySelectorAll('.delivery-fee-display').forEach(el => {
-      el.textContent = 'Rs.' + meta.deliveryFee;
-    });
-    // Update cart footer delivery text
-    const cartDelivery = document.querySelector('.cart-footer .cart-subtotal:last-of-type .cart-subtotal-val');
-    if (cartDelivery) cartDelivery.textContent = 'Rs.' + meta.deliveryFee;
-    window._deliveryFee = meta.deliveryFee;
-  }
-
-  /* ── FOOTER HOURS ── */
-  if (content.footerHours) {
-    const el = document.getElementById('footer-hours-display');
-    if (el) el.textContent = content.footerHours;
-  }
-
-  /* ── NEWSLETTER ── */
-  if (content.newsletterTitle) {
-    const el = document.querySelector('.newsletter-title');
-    if (el) el.innerHTML = content.newsletterTitle.replace(' र ', ' र<br/>');
-  }
-  if (content.newsletterSub) {
-    const el = document.querySelector('.newsletter-sub');
-    if (el) el.textContent = content.newsletterSub;
-  }
-
   /* ── TESTIMONIALS ── */
   if (content.testimonials && content.testimonials.length > 0) {
     const grid = document.querySelector('.testi-grid');
@@ -1769,18 +1903,150 @@ function applyWebsiteContent(data) {
             <div class="testi-stars">${stars}</div>
             <p class="testi-text">"${t.quote}"</p>
             <div class="testi-author">
-              <div class="testi-avatar">🙂</div>
+              <div class="testi-avatar">${t.avatar || '🙂'}</div>
               <div>
                 <div class="testi-name">${t.name}</div>
-                <div class="testi-loc">${t.loc}</div>
+                <div class="testi-loc">${t.loc || ''}</div>
               </div>
               <div class="testi-verified">✓ Verified</div>
             </div>
           </div>`;
       }).join('');
-      // Re-observe new cards for reveal animation
       grid.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
     }
+  }
+
+  /* ── SHOP CTA SECTION ── */
+  if (content.ctaLabel) {
+    const el = document.querySelector('.shop-cta-section .section-label');
+    if (el) el.textContent = content.ctaLabel;
+  }
+  if (content.ctaTitle1 || content.ctaTitle2) {
+    const el = document.querySelector('.shop-cta-title');
+    if (el) el.innerHTML = `${content.ctaTitle1 || ''}<br/><span>${content.ctaTitle2 || ''}</span>`;
+  }
+  if (content.ctaSub) {
+    const el = document.querySelector('.shop-cta-sub');
+    if (el) el.textContent = content.ctaSub;
+  }
+  if (content.ctaStat1Val) {
+    const stats = document.querySelectorAll('.shop-cta-stat-num');
+    const labels = document.querySelectorAll('.shop-cta-stat-label');
+    if (stats[0]) stats[0].textContent = content.ctaStat1Val;
+    if (labels[0]) labels[0].textContent = content.ctaStat1Lbl || '';
+    if (stats[1]) stats[1].textContent = content.ctaStat2Val || '';
+    if (labels[1]) labels[1].textContent = content.ctaStat2Lbl || '';
+    if (stats[2]) stats[2].textContent = content.ctaStat3Val || '';
+    if (labels[2]) labels[2].textContent = content.ctaStat3Lbl || '';
+  }
+  if (content.ctaBtn1Text) {
+    const btns = document.querySelectorAll('.shop-cta-content .btn-primary, .shop-cta-content .btn-secondary');
+    if (btns[0]) { btns[0].textContent = content.ctaBtn1Text; if (content.ctaBtn1Link) btns[0].href = content.ctaBtn1Link; }
+    if (btns[1]) { btns[1].textContent = content.ctaBtn2Text || ''; if (content.ctaBtn2Link) btns[1].href = content.ctaBtn2Link; }
+  }
+  if (content.ctaIcon) {
+    const el = document.querySelector('.billing-app-icon');
+    if (el) el.textContent = content.ctaIcon;
+  }
+  if (content.ctaBoxLabel) {
+    const el = document.querySelector('.billing-app-label');
+    if (el) el.textContent = content.ctaBoxLabel;
+  }
+  if (content.ctaBoxSub) {
+    const el = document.querySelector('.billing-app-sub');
+    if (el) el.innerHTML = content.ctaBoxSub.replace(/\n/g,'<br/>');
+  }
+  if (content.ctaMapText) {
+    const el = document.querySelector('.billing-launch-btn');
+    if (el) el.textContent = content.ctaMapText;
+  }
+
+  /* ── NEWSLETTER ── */
+  if (content.newsletterTitle) {
+    const el = document.querySelector('.newsletter-title');
+    if (el) el.innerHTML = content.newsletterTitle.replace(' र ', ' र<br/>');
+  }
+  if (content.newsletterSub) {
+    const el = document.querySelector('.newsletter-sub');
+    if (el) el.textContent = content.newsletterSub;
+  }
+  if (content.newsPlaceholder) {
+    const el = document.querySelector('.newsletter-input');
+    if (el) el.placeholder = content.newsPlaceholder;
+  }
+  if (content.newsBtn) {
+    const el = document.querySelector('.newsletter-btn');
+    if (el) el.textContent = content.newsBtn;
+  }
+  if (content.newsWaText) {
+    const el = document.querySelector('.newsletter-section .whatsapp-btn');
+    if (el) el.textContent = content.newsWaText;
+  }
+  if (content.newsNote) {
+    const el = document.querySelector('.newsletter-note');
+    if (el) el.textContent = content.newsNote;
+  }
+
+  /* ── FOOTER ── */
+  if (content.footerTagline) {
+    const el = document.getElementById('footer-tagline');
+    if (el) el.textContent = content.footerTagline;
+  }
+  if (content.footerCopy) {
+    const el = document.querySelector('.footer-copy');
+    if (el) el.innerHTML = content.footerCopy.replace('♥','<span>♥</span>');
+  }
+  if (content.footerHours) {
+    const el = document.getElementById('footer-hours-display');
+    if (el) el.textContent = content.footerHours;
+  }
+  if (meta.socialFb) {
+    document.querySelectorAll('a[href*="facebook.com"]').forEach(a => { a.href = meta.socialFb; });
+  }
+  if (meta.socialMap) {
+    document.querySelectorAll('a[href*="maps.app.goo.gl"]').forEach(a => { a.href = meta.socialMap; });
+  }
+  if (content.fc1Title || content.fc2Title || content.fc3Title) {
+    const cols = document.querySelectorAll('.footer-col-title');
+    if (cols[0] && content.fc1Title) cols[0].textContent = content.fc1Title;
+    if (cols[1] && content.fc2Title) cols[1].textContent = content.fc2Title;
+    if (cols[2] && content.fc3Title) cols[2].textContent = content.fc3Title;
+    if (cols[3] && content.fc4Title) cols[3].textContent = content.fc4Title;
+  }
+  const footerLinkSets = [content.fc1Links, content.fc2Links, content.fc3Links];
+  document.querySelectorAll('.footer-links').forEach((ul, i) => {
+    if (footerLinkSets[i] && footerLinkSets[i].length > 0) {
+      ul.innerHTML = footerLinkSets[i].map(lnk =>
+        `<li><a href="${lnk.url || '#'}">${lnk.label || ''}</a></li>`
+      ).join('');
+    }
+  });
+  if (content.footerBadges) {
+    const badgesEl = document.querySelector('.footer-badges');
+    if (badgesEl) {
+      const items = content.footerBadges.split(',').map(b => b.trim()).filter(Boolean);
+      badgesEl.innerHTML = items.map(b => `<div class="footer-badge">${b}</div>`).join('');
+    }
+  }
+
+  /* ── WHATSAPP NUMBER ── */
+  if (meta.whatsappNumber) {
+    window._whatsappNumber = meta.whatsappNumber;
+    const waNum = '977' + meta.whatsappNumber.replace(/^977/, '').replace(/^0/, '');
+    document.querySelectorAll('a[href*="wa.me"]').forEach(a => {
+      const href = a.getAttribute('href');
+      a.setAttribute('href', href.replace(/wa\.me\/[0-9]+/, `wa.me/${waNum}`));
+    });
+  }
+
+  /* ── DELIVERY FEE ── */
+  if (meta.deliveryFee) {
+    document.querySelectorAll('.delivery-fee-display').forEach(el => {
+      el.textContent = 'Rs.' + meta.deliveryFee;
+    });
+    const cartDelivery = document.querySelector('.cart-footer .cart-subtotal:last-of-type .cart-subtotal-val');
+    if (cartDelivery) cartDelivery.textContent = 'Rs.' + meta.deliveryFee;
+    window._deliveryFee = meta.deliveryFee;
   }
 }
 
