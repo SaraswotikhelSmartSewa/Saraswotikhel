@@ -1585,10 +1585,11 @@ function updateHeroWindow(products, meta) {
     }
   }
 
-  document.getElementById('hero-stat-products').textContent = products.length;
-  document.getElementById('dev-prod-count').textContent = products.length;
-  document.getElementById('billing-prod-count').textContent = products.length;
-  document.getElementById('cta-prod-count').textContent = products.length;
+  const _set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  _set('hero-stat-products', products.length);
+  _set('dev-prod-count', products.length);
+  _set('billing-prod-count', products.length);
+  _set('cta-prod-count', products.length);
 
   // Update category counts
   const counts = { all: products.length, leafy: 0, root: 0, 'fruit-veg': 0, herb: 0 };
