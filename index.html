@@ -1517,18 +1517,23 @@ function renderProducts(products) {
 
   grid.innerHTML = '';
   filtered.forEach((prod, idx) => {
-    const priceStr = prod.prices && prod.prices.length > 0
-      ? `Rs.${prod.prices[0].price}/${prod.prices[0].unit}`
-      : '—';
     const emoji = prod.emoji || getVeggieEmoji(prod.name);
     const isFresh = idx < 3;
+    const price0 = prod.prices && prod.prices.length > 0 ? prod.prices[0] : null;
     const card = document.createElement('div');
-    card.className = 'prod-card reveal';
+    // Add 'visible' directly so cards always show — reveal animation is a nice-to-have, not a gate
+    card.className = 'prod-card reveal visible';
     card.dataset.cat = classifyVeggie(prod.name);
 
     const imgHtml = prod.imageUrl
       ? `<img src="${prod.imageUrl}" alt="${prod.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'prod-card-emoji-fallback\\'>${emoji}</div>'"/>`
       : `<div class="prod-card-emoji-fallback">${emoji}</div>`;
+
+    // Safely escape name for inline onclick
+    const safeName = prod.name.replace(/'/g, "\\'");
+    const safeEmoji = emoji.replace(/'/g, "\\'");
+    const safeUnit  = price0 ? price0.unit.replace(/'/g, "\\'") : 'kg';
+    const safePrice = price0 ? Number(price0.price) : 0;
 
     card.innerHTML = `
       <div class="prod-card-img">
@@ -1546,24 +1551,22 @@ function renderProducts(products) {
         <p class="prod-desc">हरेक दिन बिहान किसानबाट सिधै — ताजा र शुद्ध।</p>
         <div class="prod-price-row">
           <div class="prod-price">
-            <span class="prod-price-curr">Rs.${prod.prices && prod.prices.length > 0 ? prod.prices[0].price : '—'}</span>
-            <span class="prod-unit">/${prod.prices && prod.prices.length > 0 ? prod.prices[0].unit : 'kg'}</span>
+            <span class="prod-price-curr">Rs.${price0 ? price0.price : '—'}</span>
+            <span class="prod-unit">/${price0 ? price0.unit : 'kg'}</span>
           </div>
-          <button class="prod-add-btn" onclick="addToCart('${prod.name}', ${prod.prices && prod.prices.length > 0 ? prod.prices[0].price : 0}, '${emoji}', '${prod.prices && prod.prices.length > 0 ? prod.prices[0].unit : 'kg'}', this)" aria-label="Cart मा थप्नुस्">+</button>
+          <button class="prod-add-btn" onclick="addToCart('${safeName}', ${safePrice}, '${safeEmoji}', '${safeUnit}', this)" aria-label="Cart मा थप्नुस्">+</button>
         </div>
       </div>
     `;
     grid.appendChild(card);
 
-    // Trigger reveal
-    setTimeout(() => {
-      revealObs.observe(card);
-    }, 50 * idx);
+    // Still observe for staggered animation on cards below the fold
+    setTimeout(() => revealObs.observe(card), 40 * idx);
   });
 
   // Update search index
   searchIndex = products.map(p => ({
-    name: p.name,
+    name:  p.name,
     emoji: p.emoji || getVeggieEmoji(p.name),
     price: p.prices && p.prices.length > 0 ? `Rs.${p.prices[0].price}/${p.prices[0].unit}` : '—'
   }));
@@ -1784,24 +1787,49 @@ function applyWebsiteContent(data) {
 /* Listen for data events */
 document.addEventListener('website-data-ready', (e) => {
   const data = e.detail;
-  if (data.categories && data.categories[0] && data.categories[0].items) {
-    allProducts = data.categories[0].items;
-    liveShopMeta = data.meta || {};
+  const meta = data.meta || {};
+  liveShopMeta = meta;
+
+  // Collect products from all categories, not just categories[0]
+  let products = [];
+  if (data.categories && Array.isArray(data.categories)) {
+    data.categories.forEach(cat => {
+      if (cat && Array.isArray(cat.items)) {
+        products = products.concat(cat.items);
+      }
+    });
+  }
+
+  if (products.length > 0) {
+    allProducts = products;
     updateHeroWindow(allProducts, liveShopMeta);
     renderProducts(allProducts);
     applyWebsiteContent(data);
-    showToast('🔄 Live अपडेट भयो!');
   }
 });
 
-/* Fallback: read full store data */
+/* Fallback: read full store data — always runs, merges if website node had no products */
 document.addEventListener('store-data-ready', (e) => {
   const data = e.detail;
-  if (allProducts.length === 0 && data.products && data.products.length > 0) {
+  if (!data.products || data.products.length === 0) return;
+
+  // Always apply shop meta from full store data
+  const meta = {
+    shopName:    data.shopName    || '',
+    logoUrl:     data.logoUrl     || '',
+    shopAddress: data.shopAddress || '',
+    shopPhone:   data.shopPhone   || '',
+    shopEmail:   data.shopEmail   || ''
+  };
+
+  // Only overwrite products if website node gave us nothing
+  if (allProducts.length === 0) {
     allProducts = data.products;
-    const meta = { shopName: data.shopName, logoUrl: data.logoUrl, shopAddress: data.shopAddress };
     updateHeroWindow(allProducts, meta);
     renderProducts(allProducts);
+  } else {
+    // Products already loaded — just update meta in case it's fresher
+    updateHeroWindow(allProducts, meta);
   }
 });
 
