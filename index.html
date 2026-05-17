@@ -1083,47 +1083,18 @@ footer { background: var(--ink); border-top: 1px solid rgba(255,255,255,.06); }
   <div class="section-wrap">
     <div class="cat-header">
       <div>
-        <div class="section-label reveal">तरकारी वर्गहरू</div>
-        <h2 class="section-title reveal">सबै किसिमका <em>ताजा तरकारी</em></h2>
+        <div class="section-label reveal" id="cat-section-label">तरकारी वर्गहरू</div>
+        <h2 class="section-title reveal" id="cat-section-title">सबै किसिमका <em>ताजा तरकारी</em></h2>
       </div>
-      <a href="#products" class="cat-see-all reveal">सबै हेर्नुस् →</a>
+      <a href="#products" class="cat-see-all reveal" id="cat-see-all-link">सबै हेर्नुस् →</a>
     </div>
-    <div class="veggie-cat-grid">
-      <div class="veggie-cat-card reveal" onclick="filterProducts('leafy'); showToast('🥬 पातेदार तरकारी')">
+    <div class="veggie-cat-grid" id="veggie-cat-grid">
+      <!-- Dynamically rendered from Firebase categories data -->
+      <div class="veggie-cat-card reveal" onclick="filterProducts('all')">
         <div class="veggie-cat-visual">🥬</div>
         <div class="veggie-cat-body">
-          <div class="veggie-cat-name">पातेदार तरकारी</div>
-          <div class="veggie-cat-count" id="cat-count-leafy">लोड...</div>
-        </div>
-        <span class="veggie-cat-badge">FRESH</span>
-      </div>
-      <div class="veggie-cat-card reveal" onclick="filterProducts('root'); showToast('🥔 जरेदार तरकारी')">
-        <div class="veggie-cat-visual">🥕</div>
-        <div class="veggie-cat-body">
-          <div class="veggie-cat-name">जरेदार तरकारी</div>
-          <div class="veggie-cat-count" id="cat-count-root">लोड...</div>
-        </div>
-      </div>
-      <div class="veggie-cat-card reveal" onclick="filterProducts('fruit-veg'); showToast('🍅 फलजन्य तरकारी')">
-        <div class="veggie-cat-visual">🍅</div>
-        <div class="veggie-cat-body">
-          <div class="veggie-cat-name">फलजन्य तरकारी</div>
-          <div class="veggie-cat-count" id="cat-count-fruit-veg">लोड...</div>
-        </div>
-        <span class="veggie-cat-badge">HOT</span>
-      </div>
-      <div class="veggie-cat-card reveal" onclick="filterProducts('herb'); showToast('🌿 साग/जडीबुटी')">
-        <div class="veggie-cat-visual">🌿</div>
-        <div class="veggie-cat-body">
-          <div class="veggie-cat-name">साग तथा जडीबुटी</div>
-          <div class="veggie-cat-count" id="cat-count-herb">लोड...</div>
-        </div>
-      </div>
-      <div class="veggie-cat-card reveal" onclick="filterProducts('all'); showToast('🥦 सबै तरकारी')">
-        <div class="veggie-cat-visual">🥦</div>
-        <div class="veggie-cat-body">
-          <div class="veggie-cat-name">सबै तरकारी</div>
-          <div class="veggie-cat-count" id="cat-count-all">लोड...</div>
+          <div class="veggie-cat-name">लोड हुँदैछ...</div>
+          <div class="veggie-cat-count">—</div>
         </div>
       </div>
     </div>
@@ -1476,6 +1447,16 @@ function classifyVeggie(name) {
   return 'leafy'; // default — it's a veggie store, assume leafy
 }
 
+/* Get human-readable category name — uses live Firebase categories if available */
+function getCategoryLabel(catId) {
+  if (window._websiteData && window._websiteData.categories) {
+    const cat = window._websiteData.categories.find(c => c.id === catId);
+    if (cat) return cat.name;
+  }
+  const defaults = { leafy:'पातेदार तरकारी', root:'जरेदार तरकारी', 'fruit-veg':'फलजन्य तरकारी', herb:'साग तथा जडीबुटी', all:'सबै तरकारी' };
+  return defaults[catId] || 'ताजा तरकारी';
+}
+
 /* Emoji auto-assign if no image */
 function getVeggieEmoji(name) {
   const n = name.toLowerCase();
@@ -1508,7 +1489,7 @@ function renderProducts(products) {
 
   const filtered = currentFilter === 'all'
     ? products
-    : products.filter(p => classifyVeggie(p.name) === currentFilter);
+    : products.filter(p => (p.category || classifyVeggie(p.name)) === currentFilter);
 
   if (filtered.length === 0) {
     grid.innerHTML = `<div class="no-products"><div class="no-products-icon">🥬</div>यस वर्गमा अहिले कुनै उत्पादन छैन।</div>`;
@@ -1523,7 +1504,7 @@ function renderProducts(products) {
     const card = document.createElement('div');
     // Add 'visible' directly so cards always show — reveal animation is a nice-to-have, not a gate
     card.className = 'prod-card reveal visible';
-    card.dataset.cat = classifyVeggie(prod.name);
+    card.dataset.cat = prod.category || classifyVeggie(prod.name);
 
     const imgHtml = prod.imageUrl
       ? `<img src="${prod.imageUrl}" alt="${prod.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'prod-card-emoji-fallback\\'>${emoji}</div>'"/>`
@@ -1542,7 +1523,7 @@ function renderProducts(products) {
         <button class="prod-wishlist" onclick="toggleWish(this, event)" aria-label="Wishlist">🤍</button>
       </div>
       <div class="prod-card-body">
-        <div class="prod-category">ताजा तरकारी</div>
+        <div class="prod-category">${getCategoryLabel(prod.category || classifyVeggie(prod.name))}</div>
         <div class="prod-name">${prod.name}</div>
         <div class="prod-rating">
           <span class="prod-stars">★★★★★</span>
@@ -1591,15 +1572,25 @@ function updateHeroWindow(products, meta) {
   _set('billing-prod-count', products.length);
   _set('cta-prod-count', products.length);
 
-  // Update category counts
-  const counts = { all: products.length, leafy: 0, root: 0, 'fruit-veg': 0, herb: 0 };
-  products.forEach(p => { const c = classifyVeggie(p.name); if (counts[c] !== undefined) counts[c]++; });
-  const catSuffix = 'items';
-  document.getElementById('cat-count-all').textContent = counts.all + ' ' + catSuffix;
-  document.getElementById('cat-count-leafy').textContent = counts.leafy + ' ' + catSuffix;
-  document.getElementById('cat-count-root').textContent = counts.root + ' ' + catSuffix;
-  document.getElementById('cat-count-fruit-veg').textContent = counts['fruit-veg'] + ' ' + catSuffix;
-  document.getElementById('cat-count-herb').textContent = counts.herb + ' ' + catSuffix;
+  // Update category counts — now uses dynamic categories from Firebase
+  const counts = { all: products.length };
+  products.forEach(p => {
+    const c = p.category || classifyVeggie(p.name);
+    counts[c] = (counts[c] || 0) + 1;
+  });
+  // Update dynamic category cards if rendered
+  document.querySelectorAll('.veggie-cat-card[data-catid]').forEach(card => {
+    const catId = card.dataset.catid;
+    const countEl = card.querySelector('.veggie-cat-count');
+    if(countEl) countEl.textContent = (catId === 'all' ? counts.all : (counts[catId] || 0)) + ' items';
+  });
+  // Legacy static count elements (fallback)
+  const _setCount = (id, n) => { const el = document.getElementById(id); if(el) el.textContent = n + ' items'; };
+  _setCount('cat-count-all', counts.all);
+  _setCount('cat-count-leafy', counts['leafy'] || 0);
+  _setCount('cat-count-root', counts['root'] || 0);
+  _setCount('cat-count-fruit-veg', counts['fruit-veg'] || 0);
+  _setCount('cat-count-herb', counts['herb'] || 0);
 
   // Hero window product rows (show first 3)
   const heroList = document.getElementById('hero-prod-list');
@@ -1841,6 +1832,20 @@ function applyWebsiteContent(data) {
     if (el) el.textContent = content.prodWaText;
   }
 
+  /* ── VEGGIE CATEGORIES SECTION ── */
+  if (content.catSectionLabel) {
+    const el = document.getElementById('cat-section-label');
+    if (el) el.textContent = content.catSectionLabel;
+  }
+  if (content.catSectionTitle) {
+    const el = document.getElementById('cat-section-title');
+    if (el) el.innerHTML = content.catSectionTitle;
+  }
+  if (content.catSeeAll) {
+    const el = document.getElementById('cat-see-all-link');
+    if (el) el.textContent = content.catSeeAll;
+  }
+
   /* ── HOW IT WORKS ── */
   if (content.howLabel) {
     const el = document.querySelector('#how-it-works .section-label');
@@ -2051,26 +2056,98 @@ function applyWebsiteContent(data) {
   }
 }
 
+/* ── RENDER CATEGORY CARDS FROM FIREBASE ── */
+function renderVeggieCategories(categories, allProds) {
+  const grid = document.getElementById('veggie-cat-grid');
+  if (!grid) return;
+
+  // Filter to only enabled categories
+  const enabled = (categories || []).filter(c => c.enabled !== false);
+  if (!enabled.length) return;
+
+  // Compute item counts per category
+  const counts = { all: allProds.length };
+  allProds.forEach(p => {
+    const c = p.category || classifyVeggie(p.name);
+    counts[c] = (counts[c] || 0) + 1;
+  });
+
+  grid.innerHTML = '';
+  enabled.forEach((cat, idx) => {
+    const count = cat.id === 'all' ? allProds.length : (counts[cat.id] || cat.items ? cat.items.length : 0);
+    const visual = cat.imageUrl
+      ? `<img src="${cat.imageUrl}" alt="${cat.name}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='${cat.emoji||'🥬'}'">`
+      : (cat.emoji || '🥬');
+    const badge = cat.badge ? `<span class="veggie-cat-badge" style="${cat.badge==='FRESH'?'background:var(--jade)':''};">${cat.badge}</span>` : '';
+    const card = document.createElement('div');
+    card.className = 'veggie-cat-card reveal';
+    card.dataset.catid = cat.id;
+    card.innerHTML = `
+      <div class="veggie-cat-visual">${visual}</div>
+      <div class="veggie-cat-body">
+        <div class="veggie-cat-name">${cat.name}</div>
+        <div class="veggie-cat-count">${count} items</div>
+      </div>
+      ${badge}
+    `;
+    card.addEventListener('click', () => {
+      filterProducts(cat.id);
+      showToast(`${cat.emoji || '🥬'} ${cat.name}`);
+    });
+    grid.appendChild(card);
+    setTimeout(() => revealObs.observe(card), 40 * idx);
+  });
+}
+
 /* Listen for data events */
 document.addEventListener('website-data-ready', (e) => {
   const data = e.detail;
   const meta = data.meta || {};
   liveShopMeta = meta;
 
-  // Collect products from all categories, not just categories[0]
+  // Collect products from all categories, deduplicated by id
+  // Skip the "all" virtual category to avoid duplicates
   let products = [];
+  const seenIds = new Set();
   if (data.categories && Array.isArray(data.categories)) {
     data.categories.forEach(cat => {
-      if (cat && Array.isArray(cat.items)) {
-        products = products.concat(cat.items);
+      if (cat && cat.id !== 'all' && Array.isArray(cat.items)) {
+        cat.items.forEach(item => {
+          if (!seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            products.push(item);
+          }
+        });
       }
     });
+    // Fallback: if only an "all" category exists, use it
+    if (products.length === 0) {
+      data.categories.forEach(cat => {
+        if (cat && Array.isArray(cat.items)) {
+          cat.items.forEach(item => {
+            if (!seenIds.has(item.id)) {
+              seenIds.add(item.id);
+              products.push(item);
+            }
+          });
+        }
+      });
+    }
   }
 
   if (products.length > 0) {
     allProducts = products;
     updateHeroWindow(allProducts, liveShopMeta);
     renderProducts(allProducts);
+    // Render category cards from Firebase data
+    if (data.categories && data.categories.length > 0) {
+      renderVeggieCategories(data.categories, allProducts);
+    }
+  } else {
+    // No products yet but may have category config — still render structure
+    if (data.categories && data.categories.length > 0) {
+      renderVeggieCategories(data.categories, []);
+    }
   }
   // Always apply website content (branding, text, etc.) regardless of products
   applyWebsiteContent(data);
@@ -2095,6 +2172,10 @@ document.addEventListener('store-data-ready', (e) => {
     allProducts = data.products;
     updateHeroWindow(allProducts, meta);
     renderProducts(allProducts);
+    // Render default categories with live counts
+    if (window._websiteData && window._websiteData.categories) {
+      renderVeggieCategories(window._websiteData.categories, allProducts);
+    }
   } else {
     // Products already loaded — just update meta in case it's fresher
     updateHeroWindow(allProducts, meta);
@@ -2108,6 +2189,14 @@ function filterProducts(cat, btnEl) {
   if (btnEl) {
     document.querySelectorAll('.pft').forEach(b => b.classList.remove('active'));
     btnEl.classList.add('active');
+  }
+  // Sync filter tab highlight when called from category cards
+  if (!btnEl) {
+    document.querySelectorAll('.pft').forEach(b => {
+      const onClick = b.getAttribute('onclick') || '';
+      const match = onClick.match(/filterProducts\('([^']+)'/);
+      if (match) b.classList.toggle('active', match[1] === cat);
+    });
   }
 }
 
